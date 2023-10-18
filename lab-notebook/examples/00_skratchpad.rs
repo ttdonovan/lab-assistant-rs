@@ -11,42 +11,11 @@ use anchor_client::{
     Client, Cluster,
 };
 use bs58::encode;
-use solana_program::pubkey;
 
 use std::ops::Deref;
 use std::str::FromStr;
 
-pub const PROFILE_PROGRAM_ID: Pubkey = pubkey!("pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9");
-pub const SAGE_PROGRAM_ID: Pubkey = pubkey!("SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6");
-
-fn get_user_profile_accounts<C: Deref<Target = impl Signer> + Clone>(
-    client: &Client<C>,
-    user_pubkey: &Pubkey,
-) -> anyhow::Result<Option<Vec<(Pubkey, Account)>>> {
-    let program = client.program(PROFILE_PROGRAM_ID)?;
-
-    let mut account_config = RpcAccountInfoConfig::default();
-    account_config.commitment = Some(CommitmentConfig::confirmed());
-
-    let config = RpcProgramAccountsConfig {
-        filters: Some(vec![RpcFilterType::Memcmp(Memcmp::new_base58_encoded(
-            30,
-            &user_pubkey.to_bytes(),
-        ))]),
-        account_config,
-        with_context: Some(false),
-    };
-
-    let user_profile_accounts = program
-        .rpc()
-        .get_program_accounts_with_config(&program.id(), config)?;
-
-    if user_profile_accounts.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(user_profile_accounts))
-    }
-}
+use lab_assistant::{get_user_profile_accounts, SAGE_PROGRAM_ID};
 
 fn get_starbase_from_coords<C: Deref<Target = impl Signer> + Clone>(
     client: &Client<C>,
@@ -65,15 +34,15 @@ fn get_starbase_from_coords<C: Deref<Target = impl Signer> + Clone>(
     dbg!(&y_bytes);
     dbg!(&y58);
 
-    let mut account_config = RpcAccountInfoConfig::default();
-    account_config.commitment = Some(CommitmentConfig::confirmed());
-
     let config = RpcProgramAccountsConfig {
         filters: Some(vec![
             RpcFilterType::Memcmp(Memcmp::new_base58_encoded(41, &x58.into_bytes())),
             RpcFilterType::Memcmp(Memcmp::new_base58_encoded(49, &y58.into_bytes())),
         ]),
-        account_config,
+        account_config: RpcAccountInfoConfig {
+            commitment: Some(CommitmentConfig::confirmed()),
+            ..Default::default()
+        },
         with_context: Some(false),
     };
 

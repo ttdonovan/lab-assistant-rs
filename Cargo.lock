@@ -1949,6 +1949,11 @@ dependencies = [
 [[package]]
 name = "lab-assistant"
 version = "0.1.0"
+dependencies = [
+ "anchor-client",
+ "anyhow",
+ "solana-program",
+]
 
 [[package]]
 name = "lab-notebook"
@@ -1957,7 +1962,7 @@ dependencies = [
  "anchor-client",
  "anyhow",
  "bs58 0.5.0",
- "solana-program",
+ "lab-assistant",
  "tokio",
 ]
 
