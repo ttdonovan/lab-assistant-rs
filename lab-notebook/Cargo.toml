@@ -1,0 +1,13 @@
+[package]
+name = "lab-notebook"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anchor-client = "0.29"
+anyhow = "1.0"
+bs58 = "0.5"
+solana-program = "1.17"
+tokio = { version = "1.33", features = ["full"] }

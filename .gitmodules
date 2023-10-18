@@ -1,0 +1,3 @@
+[submodule "resources/Lab-Assistant"]
+	path = resources/Lab-Assistant
+	url = https://github.com/ImGroovin/Lab-Assistant
