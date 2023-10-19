@@ -31,11 +31,6 @@ as a template for basic setup and usage.
 
 * Able to deserialize a `Fleet` account, but how to get "remaining data" for the fleet state? Using either `anchor_client` or `solana_client`.
 
-2. See `lab-notebook/examples/00_skratchpad.rs`.
-
-* What is wrong with `get_starbase_from_coords()`? Given `40, 30` would
-expect Ustur CSS.
-
 3. General recommendations on how to organize code.
 
 * Where to put the "fleet calculators"? See [https://www.npmjs.com/package/@staratlas/sage?activeTab=code]() and `@staratlas/sage/src/fleets.rs` and what should the api look like?
@@ -45,6 +40,10 @@ expect Ustur CSS.
 let fleet_calc = FleetCalculator::new();
 let fleet_size = fleet_calc.get_fleet_size(&fleet);
 ```
+
+or place all `calculate_*` functions in `staratlast::stage::fleet`?
+
+* Thoughts about `staratlas::sage::starbase` see `lab-assistant-rs/src/staratals/sage/starbase.rs`.
 
 4. Initialize Sage Labs game state and accounts given a `&Client` and player's `&Pubkey` to do execute operations:
 

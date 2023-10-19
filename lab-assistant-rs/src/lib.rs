@@ -14,7 +14,31 @@ use std::ops::Deref;
 
 declare_id!("SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6");
 
-// [start] - https://solscan.io/account/SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6#epZhSDVBrjgL72hW5ED6xsufx4qi5zQZLiVUtT6q4Ri
+// [start - cargo] - https://solscan.io/account/Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH#anchorProgramIDL
+// Accounts
+#[account]
+#[derive(Debug)]
+pub struct CargoStatsDefinition {
+    version: u8,
+    authority: Pubkey,
+    default_cargo_type: Pubkey,
+    stats_count: u16,
+    seq_id: u16,
+}
+
+#[account]
+#[derive(Debug)]
+pub struct CargoType {
+    version: u8,
+    stats_definition: Pubkey,
+    mint: Pubkey,
+    bump: u8,
+    stats_count: u16,
+    seq_id: u16,
+}
+// [end - cargo]
+
+// [start - sage] - https://solscan.io/account/SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6#epZhSDVBrjgL72hW5ED6xsufx4qi5zQZLiVUtT6q4Ri
 // Accounts
 #[account]
 #[derive(Debug)]
@@ -52,6 +76,49 @@ pub struct GameState {
     version: u8,
     update_id: u64,
     game_id: Pubkey,
+}
+
+#[account]
+#[derive(Debug)]
+pub struct Starbase {
+    version: u8,
+    game_id: Pubkey,
+    pub sector: [i64; 2],
+    crafting_facility: Pubkey,
+    pub name: [u8; 64],
+    sub_coordinates: [i64; 2],
+    pub faction: u8,
+    bump: u8,
+    seq_id: u16,
+    state: u8,
+    level: u8,
+    hp: u64,
+    sp: u64,
+    sector_ring_available: u8,
+    upgrade_state: i64,
+    built_destroyed_timestamp: i64,
+    num_upgrading_fleets: u64,
+    total_upgrade_rate: u64,
+    received_upgrade_materials: u64,
+    required_upgrade_materials: u64,
+    last_updated_rate_timestamp: i64,
+}
+
+#[account]
+#[derive(Debug)]
+pub struct SurveyDataUnitTracker {
+    version: u8,
+    game_id: Pubkey,
+    mint: Pubkey,
+    signer: Pubkey,
+    signer_bump: u8,
+    survy_data_units_by_seconds: [u32; 60],
+    limit: u32,
+    scan_cooldown: u16,
+    probability: u16,
+    max: u16,
+    num_sectors: u16,
+    last_update: i64,
 }
 
 // Types
@@ -110,9 +177,10 @@ pub struct ShipStats {
     cargo_stats: CargoStats,
     misc_stats: MiscStats,
 }
-// [end]
+// [end - sage]
 
-mod staratlas;
+pub mod staratlas;
+pub use crate::staratlas::cargo::CARGO_PROGRAM_ID;
 pub use crate::staratlas::player_profile::PROFILE_PROGRAM_ID;
 pub use crate::staratlas::profile_faction::PROFILE_FACTION_PROGRAM_ID;
 pub use crate::staratlas::sage::SAGE_PROGRAM_ID;
@@ -122,6 +190,9 @@ pub struct SagePlayerProfileGameState {
     pub game_id: Pubkey,
     pub game_account: Game,
     pub game_state_account: GameState,
+    pub sdu_tracker_accounts: Vec<(Pubkey, SurveyDataUnitTracker)>, // TODO: one or many?
+    pub cargo_stats_definition_accounts: Vec<(Pubkey, CargoStatsDefinition)>, // TODO: one or many?
+    pub cargo_type_accounts: Vec<(Pubkey, CargoType)>,
     pub user_profile_pubkey: Pubkey,
     pub user_profile_account: Account,
     pub profile_faction_pubkey: Pubkey,
@@ -146,6 +217,33 @@ pub fn init_sage_labs_game<C: Deref<Target = impl Signer> + Clone>(
             .expect("cannot find GameState account");
     //dbg!(&game_state_account);
 
+    // SDU Tracker (Accounts)
+    let sdu_tracker_accounts = staratlas::sage::get_sdu_tracker_accounts(client)?.unwrap_or(vec![]);
+
+    // TODO: verify that SDU tracker account(s) is one or many
+    assert!(
+        !sdu_tracker_accounts.is_empty(),
+        "must be at least one SDU Tracker account"
+    );
+
+    let cargo_stats_definition_accounts =
+        staratlas::cargo::get_cargo_stats_definition_accounts(client)?.unwrap_or(vec![]);
+
+    // TODO: verify that CargoStatsDefinition account(s) is one or many
+    assert!(
+        !cargo_stats_definition_accounts.is_empty(),
+        "must be at least one CargoStatsDefinition account"
+    );
+
+    // Cargo Type (Accounts)
+    let (_pubkey, cargo_stats_defintion_account) = &cargo_stats_definition_accounts
+        .first()
+        .expect("cannot find Account");
+    let cargo_type_accounts =
+        staratlas::cargo::get_cargo_type_accounts(client, cargo_stats_defintion_account.seq_id)?
+            .unwrap_or(vec![]);
+    // dbg!(&cargo_type_accounts);
+
     // User Profiles (Account)
     let user_profiles = staratlas::player_profile::get_user_profile_accounts(client, user_pubkey)?
         .unwrap_or(vec![]);
@@ -156,7 +254,7 @@ pub fn init_sage_labs_game<C: Deref<Target = impl Signer> + Clone>(
 
     let (user_profile_pubkey, user_profile_account) =
         &user_profiles.first().expect("cannot find Account");
-    dbg!(&user_profile_account);
+    // dbg!(&user_profile_account);
 
     // User Profile Factions (Account)
     let profile_factions =
@@ -182,6 +280,9 @@ pub fn init_sage_labs_game<C: Deref<Target = impl Signer> + Clone>(
         game_id: *game_id,
         game_account: game_account.to_owned(),
         game_state_account: game_state_account.to_owned(),
+        sdu_tracker_accounts,
+        cargo_stats_definition_accounts,
+        cargo_type_accounts,
         user_profile_pubkey: *user_profile_pubkey,
         user_profile_account: user_profile_account.to_owned(),
         profile_faction_pubkey: *profile_faction_pubkey,

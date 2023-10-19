@@ -17,50 +17,6 @@ use std::str::{self, FromStr};
 
 use lab_assistant as labs;
 
-fn get_starbase_from_coords<C: Deref<Target = impl Signer> + Clone>(
-    client: &Client<C>,
-    x: i64,
-    y: i64,
-) -> anyhow::Result<Option<Account>> {
-    let program = client.program(labs::SAGE_PROGRAM_ID)?;
-
-    let x_bytes = x.to_le_bytes();
-    let x58 = encode(&x_bytes).into_string();
-    let y_bytes = y.to_le_bytes();
-    let y58 = encode(&y_bytes).into_string();
-
-    dbg!(&x_bytes);
-    dbg!(&x58);
-    dbg!(&y_bytes);
-    dbg!(&y58);
-
-    let config = RpcProgramAccountsConfig {
-        filters: Some(vec![
-            RpcFilterType::Memcmp(Memcmp::new_base58_encoded(41, &x58.into_bytes())),
-            RpcFilterType::Memcmp(Memcmp::new_base58_encoded(49, &y58.into_bytes())),
-        ]),
-        account_config: RpcAccountInfoConfig {
-            commitment: Some(CommitmentConfig::confirmed()),
-            ..Default::default()
-        },
-        with_context: Some(false),
-    };
-
-    let starbases = program
-        .rpc()
-        .get_program_accounts_with_config(&program.id(), config)?;
-
-    dbg!(&starbases);
-
-    Ok(None)
-}
-
-// let starbase_data = &starbases[0].account.data;
-// dbg!(&starbase_data);
-// let starbase = Account::try_from_slice_unchecked(starbase_data)?;
-
-// Ok(starbase)
-
 const RPC_URL: &str = "https://solana-api.syndica.io/access-token/WPoEqWQ2auQQY1zHRNGJyRBkvfOLqw58FqYucdYtmy8q9Z84MBWwqtfVf8jKhcFh/rpc";
 
 fn main() -> anyhow::Result<()> {
@@ -75,16 +31,31 @@ fn main() -> anyhow::Result<()> {
     let game = labs::init_sage_labs_game(&client, &user_pubkey)?;
     // dbg!(&game);
 
-    for (fleet_pubkey, fleet_account) in game.user_fleets.iter() {
-        let fleet_label = str::from_utf8(&fleet_account.fleet_label)?;
+    // dbg!(&game.cargo_stats_definition_accounts);
+    // dbg!(&game.cargo_type_accounts);
 
-        dbg!(format!("Fleet: {}", fleet_label));
-        dbg!(&fleet_pubkey);
-        dbg!(&fleet_account);
+    // for (fleet_pubkey, fleet_account) in game.user_fleets.iter() {
+    //     let fleet_label = str::from_utf8(&fleet_account.fleet_label)?;
 
-        // TODO: how to get "remaining data" to check fleet state?
+    //     dbg!(format!("Fleet: {}", fleet_label));
+    //     dbg!(&fleet_pubkey);
+    //     dbg!(&fleet_account);
 
-        break;
+    //     // TODO: how to get "remaining data" to check fleet state?
+
+    //     break;
+    // }
+
+    let (pubkey, _) = labs::staratlas::sage::starbase_find_address(&game.game_id, (40, 30));
+    dbg!(&pubkey);
+
+    if let Some(starbase_account) =
+        labs::staratlas::sage::get_starbase_from_coords(&client, &game.game_id, 40, 30)?
+    {
+        dbg!(&starbase_account.faction);
+        dbg!(&starbase_account.sector);
+        let starbase_name = str::from_utf8(&starbase_account.name)?;
+        dbg!(starbase_name);
     }
 
     Ok(())

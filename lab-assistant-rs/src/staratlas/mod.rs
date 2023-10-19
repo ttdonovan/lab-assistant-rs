@@ -11,6 +11,7 @@ use solana_program::pubkey;
 
 use std::ops::Deref;
 
+pub mod cargo;
 pub mod player_profile;
 pub mod profile_faction;
 pub mod sage;
