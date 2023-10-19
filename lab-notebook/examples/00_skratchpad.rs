@@ -72,26 +72,13 @@ fn main() -> anyhow::Result<()> {
     );
 
     let user_pubkey = Pubkey::from_str("player-pubkey-here")?;
+    let game = labs::init_sage_labs_game(&client, &user_pubkey)?;
+    // dbg!(&game);
 
-    // User Profiles
-    let user_profiles = labs::get_user_profile_accounts(&client, &user_pubkey)?.unwrap_or(vec![]);
-    let (user_profile_pubkey, user_profile_account) = &user_profiles.first().unwrap();
-    // dbg!(&user_profile_pubkey);
-    // dbg!(&user_profile_account);
-
-    // // User Profile Factions
-    // let profile_factions = labs::get_profile_faction_accounts(&client, &user_profile_pubkey)?.unwrap_or(vec![]);
-    // let (profile_faction_pubkey, profile_faction_account) = &profile_factions.first().unwrap();
-    // // dbg!(&profile_faction_pubkey);
-    // // dbg!(&profile_faction_account);
-
-    // User Fleets
-    let fleets = labs::get_user_fleet_accounts(&client, &user_profile_pubkey)?.unwrap_or(vec![]);
-
-    for (i, (fleet_pubkey, fleet_account)) in fleets.iter().enumerate() {
+    for (fleet_pubkey, fleet_account) in game.user_fleets.iter() {
         let fleet_label = str::from_utf8(&fleet_account.fleet_label)?;
 
-        dbg!(format!("Fleet #{}: {}", i + 1, fleet_label));
+        dbg!(format!("Fleet: {}", fleet_label));
         dbg!(&fleet_pubkey);
         dbg!(&fleet_account);
 

@@ -46,6 +46,17 @@ let fleet_calc = FleetCalculator::new();
 let fleet_size = fleet_calc.get_fleet_size(&fleet);
 ```
 
+4. Initialize Sage Labs game state and accounts given a `&Client` and player's `&Pubkey` to do execute operations:
+
+    * move fleets
+    * scan for SDU
+    * mine resources
+    * transport resources
+    * load/unload cargo
+
+    a. api `lab_assistant::init_sage_labs_game(&client, &player_pubkey)` returns struct `SagePlayerProfileGameState` that holds all required account information, ensure that assumptions in function are correct to "play" Sage Labs
+    b. review the `SagePlayerProfileGameState` struct and identify missing Solana accounts and data required for above operations
+
 ## Credits
 
 * Inspired by [Lab-Assistant](https://github.com/ImGroovin/Lab-Assistant).
