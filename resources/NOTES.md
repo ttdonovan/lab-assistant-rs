@@ -9,4 +9,5 @@
 
 ## TypeScript Bindings
 
+* https://www.npmjs.com/package/@staratlas/data-source
 * https://www.npmjs.com/package/@staratlas/sage

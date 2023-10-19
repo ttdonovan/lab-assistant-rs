@@ -1951,6 +1951,7 @@ name = "lab-assistant"
 version = "0.1.0"
 dependencies = [
  "anchor-client",
+ "anchor-lang",
  "anyhow",
  "solana-program",
 ]
@@ -1963,7 +1964,6 @@ dependencies = [
  "anyhow",
  "bs58 0.5.0",
  "lab-assistant",
- "tokio",
 ]
 
 [[package]]

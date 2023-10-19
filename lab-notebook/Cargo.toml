@@ -10,4 +10,3 @@ anchor-client = "0.29"
 anyhow = "1.0"
 bs58 = "0.5"
 lab-assistant = { path = "../lab-assistant-rs" }
-tokio = { version = "1.33", features = ["full"] }

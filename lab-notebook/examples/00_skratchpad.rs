@@ -1,5 +1,5 @@
 use anchor_client::{
-    anchor_lang::prelude::Pubkey,
+    anchor_lang::{prelude::Pubkey, AnchorDeserialize},
     solana_client::{
         rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
         rpc_filter::{Memcmp, RpcFilterType},
@@ -13,16 +13,16 @@ use anchor_client::{
 use bs58::encode;
 
 use std::ops::Deref;
-use std::str::FromStr;
+use std::str::{self, FromStr};
 
-use lab_assistant::{get_user_profile_accounts, SAGE_PROGRAM_ID};
+use lab_assistant as labs;
 
 fn get_starbase_from_coords<C: Deref<Target = impl Signer> + Clone>(
     client: &Client<C>,
     x: i64,
     y: i64,
 ) -> anyhow::Result<Option<Account>> {
-    let program = client.program(SAGE_PROGRAM_ID)?;
+    let program = client.program(labs::SAGE_PROGRAM_ID)?;
 
     let x_bytes = x.to_le_bytes();
     let x58 = encode(&x_bytes).into_string();
@@ -72,11 +72,33 @@ fn main() -> anyhow::Result<()> {
     );
 
     let user_pubkey = Pubkey::from_str("player-pubkey-here")?;
-    let user_profiles = get_user_profile_accounts(&client, &user_pubkey)?;
-    dbg!(&user_profiles);
 
-    let starbase = get_starbase_from_coords(&client, 40, 30)?;
-    dbg!(&starbase);
+    // User Profiles
+    let user_profiles = labs::get_user_profile_accounts(&client, &user_pubkey)?.unwrap_or(vec![]);
+    let (user_profile_pubkey, user_profile_account) = &user_profiles.first().unwrap();
+    // dbg!(&user_profile_pubkey);
+    // dbg!(&user_profile_account);
+
+    // // User Profile Factions
+    // let profile_factions = labs::get_profile_faction_accounts(&client, &user_profile_pubkey)?.unwrap_or(vec![]);
+    // let (profile_faction_pubkey, profile_faction_account) = &profile_factions.first().unwrap();
+    // // dbg!(&profile_faction_pubkey);
+    // // dbg!(&profile_faction_account);
+
+    // User Fleets
+    let fleets = labs::get_user_fleet_accounts(&client, &user_profile_pubkey)?.unwrap_or(vec![]);
+
+    for (i, (fleet_pubkey, fleet_account)) in fleets.iter().enumerate() {
+        let fleet_label = str::from_utf8(&fleet_account.fleet_label)?;
+
+        dbg!(format!("Fleet #{}: {}", i + 1, fleet_label));
+        dbg!(&fleet_pubkey);
+        dbg!(&fleet_account);
+
+        // TODO: how to get "remaining data" to check fleet state?
+
+        break;
+    }
 
     Ok(())
 }
