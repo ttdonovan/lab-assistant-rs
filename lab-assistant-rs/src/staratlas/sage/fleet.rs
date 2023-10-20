@@ -92,7 +92,7 @@ pub fn get_fleet_state<C: Deref<Target = impl Signer> + Clone>(
     //
     // Values for MIN_DATA_SIZE copied from typscript code:
     //
-    // const MOVEMENT_STATS_MIN_DATA_SIZE: usize = 28;
+    // const MOVEMENT_STATS_MIN_DATA_SIZE: usize = 28; // FIXME(?): why 28 vs 24?
     // const CARGO_STATS_MIN_DATA_SIZE: usize = 28;
     // const MISC_STATS_MIN_DATA_SIZE: usize = 12; // FIXME(?): found in typescript comment `u64 + (2 * u16) = 8 + (2 * 2) + 4 = 16``
     // const SHIP_STATS_MIN_DATA_SIZE: usize =
@@ -101,8 +101,8 @@ pub fn get_fleet_state<C: Deref<Target = impl Signer> + Clone>(
 
     dbg!(std::mem::size_of::<crate::MovementStats>()); // std::mem::size_of::<crate::MovementStats>() = 24
     dbg!(std::mem::size_of::<crate::CargoStats>()); // std::mem::size_of::<crate::CargoStats>() = 28
-    dbg!(std::mem::size_of::<crate::MiscStats>()); // std::mem::size_of::<crate::MiscStats>() = 16
-    dbg!(std::mem::size_of::<crate::ShipStats>()); // std::mem::size_of::<crate::ShipStats>() = 72
+    dbg!(std::mem::size_of::<crate::MiscStats>()); // std::mem::size_of::<crate::MiscStats>() = 16 (idl MiscStats and MiscStatsUnpacked)
+    dbg!(std::mem::size_of::<crate::ShipStats>()); // std::mem::size_of::<crate::ShipStats>() = 72 (idl ShipStats and ShipStatsUnpacked)
     dbg!(std::mem::size_of::<crate::Fleet>()); // std::mem::size_of::<crate::Fleet>() = 416
 
     let fleet_account = Fleet::deserialize(&mut data_slice)?;

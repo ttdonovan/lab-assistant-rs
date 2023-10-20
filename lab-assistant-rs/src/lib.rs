@@ -66,7 +66,7 @@ pub struct Fleet {
     /// The time at which the scan cooldown expires
     pub scan_cooldown_expires_at: i64,
     /// The fleet's stats.
-    pub stats: ShipStats,
+    pub stats: ShipStats, // FIXME: should this code be using `ShipStatsUnpacked` and not `ShipStats`?.
     /// The Cargo pod representing the fleet's cargo hold
     pub cargo_hold: Pubkey,
     /// The Cargo pod representing the fleet's fuel tank
@@ -224,7 +224,7 @@ pub struct ShipCounts {
 // #[zero_copy]
 #[derive(Debug, Copy, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
 #[repr(C)] // FIXME(?): cannot do `#[repr(C, packed)]` and `std::mem::size_of::<crate::ShipStats>() = 72`
-pub struct ShipStats {
+pub struct ShipStats { // FIXME: should this code be using `ShipStatsUnpacked` and not `ShipStats`?.
     /// Movement stats for the ship
     // #[strong_sub_struct]
     // #[packed_sub_struct]
@@ -298,7 +298,7 @@ pub struct CargoStats {
 // #[safe_zero_copy]
 #[zero_copy]
 #[derive(Debug, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
-pub struct MiscStats {
+pub struct MiscStats { // FIXME: should this code be using `MiscStatsUnpacked` (16) and not `MiscStats` (12)?.
     /// Number of crew in the ship
     // #[fixed_point(1, Crew)]
     pub crew: u64,
