@@ -1953,6 +1953,7 @@ dependencies = [
  "anchor-client",
  "anchor-lang",
  "anyhow",
+ "bytemuck",
  "solana-program",
 ]
 

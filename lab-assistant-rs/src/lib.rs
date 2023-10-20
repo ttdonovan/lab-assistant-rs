@@ -40,25 +40,43 @@ pub struct CargoType {
 
 // [start - sage] - https://solscan.io/account/SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6#epZhSDVBrjgL72hW5ED6xsufx4qi5zQZLiVUtT6q4Ri
 // Accounts
-#[account]
-#[derive(Debug)]
+// #[safe_zero_copy_account]
+#[account] // #[account(zero_copy)]
+#[derive(Debug)] // borsh::BorshDeserialize, borsh::BorshSerialize
 pub struct Fleet {
-    version: u8,
-    game_id: Pubkey,
-    owner_profile: Pubkey,
-    fleet_ships: Pubkey,
-    sub_profile: OptionalNonSystemPubkey,
-    sub_profile_invalidator: Pubkey,
+    /// The data version of this account.
+    pub version: u8,
+    /// The game id this belongs to.
+    pub game_id: Pubkey,
+    /// The owner's profile.
+    pub owner_profile: Pubkey,
+    /// Fleet Ships Key
+    pub fleet_ships: Pubkey,
+    /// The fleet's sub-authority.
+    /// If [`Some`] will have the exclusive ability to interact with this fleet.
+    pub sub_profile: OptionalNonSystemPubkey,
+    /// The authority for revoking a sun-authority.
+    pub sub_profile_invalidator: Pubkey,
+    /// The label or name of the fleet.
     pub fleet_label: [u8; 32],
-    ship_counts: ShipCounts,
-    warp_cooldown_expires_at: i64,
-    scan_cooldown_expires_at: i64,
-    stats: ShipStats,
-    cargo_hold: Pubkey,
-    fuel_tank: Pubkey,
-    ammo_bank: Pubkey,
-    update_id: u64,
-    bump: u8,
+    /// The number of ships in the fleet.
+    pub ship_counts: ShipCounts,
+    /// The time at which the warp cooldown expires
+    pub warp_cooldown_expires_at: i64,
+    /// The time at which the scan cooldown expires
+    pub scan_cooldown_expires_at: i64,
+    /// The fleet's stats.
+    pub stats: ShipStats,
+    /// The Cargo pod representing the fleet's cargo hold
+    pub cargo_hold: Pubkey,
+    /// The Cargo pod representing the fleet's fuel tank
+    pub fuel_tank: Pubkey,
+    /// The Cargo pod representing the fleet's ammo bank
+    pub ammo_bank: Pubkey,
+    /// The update id for the `Fleet`
+    pub update_id: u64,
+    /// The fleet's bump.
+    pub bump: u8,
 }
 
 #[account]
@@ -122,32 +140,42 @@ pub struct SurveyDataUnitTracker {
 }
 
 // Types
-#[derive(Debug, Clone, AnchorSerialize, borsh::BorshDeserialize)]
-pub struct CargoStats {
-    cargo_capacity: u32,
-    fuel_capacity: u32,
-    ammo_capacity: u32,
-    ammo_consumption_rate: u32,
-    food_consumption_rate: u32,
-    mining_rate: u32,
-    upgrade_rate: u32,
-}
-
-#[derive(Debug, Clone, AnchorSerialize, borsh::BorshDeserialize)]
+#[zero_copy]
+#[derive(Debug, borsh::BorshDeserialize, borsh::BorshSerialize)]
 pub struct OptionalNonSystemPubkey {
     key: Pubkey,
 }
 
-#[derive(Debug, Clone, AnchorSerialize, borsh::BorshDeserialize)]
-pub struct MiscStats {
-    crew: u64,
-    respawn_time: u16,
-    scan_cool_down: u16,
-    scan_repair_kit_amount: u32,
+#[derive(Debug, borsh::BorshDeserialize)]
+pub struct StarbaseLoadingBay {
+    key: Pubkey,
+    last_update: i64,
 }
 
-#[derive(Debug, Clone, AnchorSerialize, borsh::BorshDeserialize)]
-pub struct MovementStats {
+#[derive(Debug, borsh::BorshDeserialize)]
+pub struct Idle {
+    sector: [i64; 2],
+}
+
+#[derive(Debug, borsh::BorshDeserialize)]
+pub struct MineAsteroid {
+    asteroid: Pubkey,
+    resource: Pubkey,
+    start: i64,
+    end: i64,
+    last_update: i64,
+}
+
+#[derive(Debug, borsh::BorshDeserialize)]
+pub struct MoveWarp {
+    from_sector: [i64; 2],
+    to_sector: [i64; 2],
+    warp_start: i64,
+    warp_finish: i64,
+}
+
+#[derive(Debug, borsh::BorshDeserialize)]
+pub struct MoveSubwarp {
     subwarp_speed: u32,
     warp_speed: u32,
     max_warp_distance: u16,
@@ -157,25 +185,132 @@ pub struct MovementStats {
     planet_exit_fuel_amount: u32,
 }
 
-#[derive(Debug, Clone, AnchorSerialize, borsh::BorshDeserialize)]
-pub struct ShipCounts {
-    total: u32,
-    updated: u32,
-    xx_small: u16,
-    x_small: u16,
-    small: u16,
-    medium: u16,
-    large: u16,
-    capital: u16,
-    commander: u16,
-    titan: u16,
+#[derive(Debug, borsh::BorshDeserialize)]
+pub struct Respawn {
+    sector: [i64; 2],
+    start: i64,
 }
 
-#[derive(Debug, Clone, AnchorSerialize, borsh::BorshDeserialize)]
+// #[repr(C, packed)]
+// #[safe_zero_copy]
+#[zero_copy]
+#[derive(Debug, borsh::BorshDeserialize, borsh::BorshSerialize)]
+pub struct ShipCounts {
+    /// The total number of ships in the fleet.
+    pub total: u32,
+    /// Used when updating a fleet.
+    /// Value is 0 when fleet update is in progress
+    pub updated: u32,
+    /// The number of xx small ships in the fleet.
+    pub xx_small: u16,
+    /// The number of x small ships in the fleet.
+    pub x_small: u16,
+    /// The number of small ships in the fleet.
+    pub small: u16,
+    /// The number of medium ships in the fleet.
+    pub medium: u16,
+    /// The number of large ships in the fleet.
+    pub large: u16,
+    /// The number of capital ships in the fleet.
+    pub capital: u16,
+    /// The number of commander ships in the fleet.
+    pub commander: u16,
+    /// The number of titan ships in the fleet.
+    pub titan: u16,
+}
+
+/// A ship's stats
+// #[safe_zero_copy]
+// #[zero_copy]
+#[derive(Debug, Copy, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
+#[repr(C)] // FIXME(?): cannot do `#[repr(C, packed)]` and `std::mem::size_of::<crate::ShipStats>() = 72`
 pub struct ShipStats {
-    movement_stats: MovementStats,
-    cargo_stats: CargoStats,
-    misc_stats: MiscStats,
+    /// Movement stats for the ship
+    // #[strong_sub_struct]
+    // #[packed_sub_struct]
+    pub movement_stats: MovementStats,
+    /// Cargo stats for the ship
+    // #[strong_sub_struct]
+    // #[packed_sub_struct]
+    pub cargo_stats: CargoStats,
+    /// Miscellaneous stats for the ship
+    // #[strong_sub_struct]
+    // #[packed_sub_struct]
+    pub misc_stats: MiscStats,
+}
+
+/// A ship's movement stats
+// #[safe_zero_copy]
+#[zero_copy]
+#[derive(Debug, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
+pub struct MovementStats {
+    /// the amount of distance that the ship can cover in one second while sub-warping
+    // #[fixed_point(1_000_000, DivUnit<AU, Second>)]
+    pub subwarp_speed: u32,
+    /// the amount of distance that the ship can cover in one second while warping
+    // #[fixed_point(1_000_000, DivUnit<AU, Second>)]
+    pub warp_speed: u32,
+    /// the max distance that the ship can warp
+    // #[fixed_point(100, AU)]
+    pub max_warp_distance: u16,
+    /// the time it takes the ship to be able to warp again after a warp
+    // #[fixed_point(1, Second)]
+    pub warp_cool_down: u16,
+    /// the amount of fuel consumed by the ship when sub-warp moving
+    // #[fixed_point(100, DivUnit<Fuel, AU>)]
+    pub subwarp_fuel_consumption_rate: u32,
+    /// the amount of fuel consumed by the ship when warp moving
+    // #[fixed_point(100, DivUnit<Fuel, AU>)]
+    pub warp_fuel_consumption_rate: u32,
+    /// the amount of fuel required to exit a planet
+    // #[fixed_point(1, Fuel)]
+    pub planet_exit_fuel_amount: u32,
+}
+
+/// A ship's cargo stats
+// #[safe_zero_copy]
+#[zero_copy]
+#[derive(Debug, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
+pub struct CargoStats {
+    /// the capacity of the ship's cargo hold
+    pub cargo_capacity: u32,
+    /// the capacity of the ship's fuel tank
+    // #[fixed_point(1, Fuel)]
+    pub fuel_capacity: u32,
+    /// the capacity of the ship's ammo bank
+    // #[fixed_point(1, Ammo)]
+    pub ammo_capacity: u32,
+    /// the amount of ammo consumed per second by the ship when doing non-combat activities e.g. mining
+    // #[fixed_point(10_000, DivUnit<Ammo, Second>)]
+    pub ammo_consumption_rate: u32,
+    /// the amount of food consumed per second by the ship when doing non-combat activities e.g. mining
+    // #[fixed_point(10_000, DivUnit<Food, Second>)]
+    pub food_consumption_rate: u32,
+    /// the amount of resources that can be mined by a ship per second
+    // #[fixed_point(10_000, DivUnit<Unitless, Second>)]
+    pub mining_rate: u32,
+    /// the amount of upgrade material that is consumed by a ship per second while upgrading a Starbase
+    // #[fixed_point(100, DivUnit<Unitless, Second>)]
+    pub upgrade_rate: u32,
+}
+
+/// A ship's miscellaneous stats
+// #[safe_zero_copy]
+#[zero_copy]
+#[derive(Debug, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
+pub struct MiscStats {
+    /// Number of crew in the ship
+    // #[fixed_point(1, Crew)]
+    pub crew: u64,
+    /// the time it takes the ship to respawn
+    // #[fixed_point(1, Second)]
+    pub respawn_time: u16,
+    /// the time it takes the ship to be able to scan again after scanning
+    // #[fixed_point(1, Second)]
+    pub scan_cool_down: u16,
+    /// the amount of food required to do a scan
+    // #[fixed_point(1, Toolkit)]
+    pub scan_repair_kit_amount: u32,
 }
 // [end - sage]
 

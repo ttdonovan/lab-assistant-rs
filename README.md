@@ -27,9 +27,11 @@ as a template for basic setup and usage.
 
 ## Requests For Help
 
-1. See `lab-notebook/examples/00_skratchpad.rs` and `lab-assistant-rs/src/lib.rs`.
+1. See `lab-notebook/examples/00_skratchpad.rs` (dbg! and comments) and `lab-assistant-rs/src/lib.rs`.
 
-* Able to deserialize a `Fleet` account, but how to get "remaining data" for the fleet state? Using either `anchor_client` or `solana_client`.
+* Able to deserialize a `Fleet` account, but how to get "remaining data" for the fleet state?
+* Sorta working but very confused on the bytes return from RPC solona `get_account_data()`
+* See `lab-assistant-rs/src/staratlas/sage/fleet.rs` and specfically `get_fleet_state()`
 
 3. General recommendations on how to organize code.
 
