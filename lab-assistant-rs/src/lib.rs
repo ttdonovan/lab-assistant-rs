@@ -10,7 +10,9 @@ use anchor_lang::prelude::*;
 // use borsh::BorshDeserialize;
 // use solana_account_decoder::UiAccountEncoding;
 
+use std::fmt;
 use std::ops::Deref;
+use std::str;
 
 declare_id!("SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6");
 
@@ -146,18 +148,18 @@ pub struct OptionalNonSystemPubkey {
     key: Pubkey,
 }
 
-#[derive(Debug, borsh::BorshDeserialize)]
+#[derive(Debug, Clone, borsh::BorshDeserialize)]
 pub struct StarbaseLoadingBay {
     key: Pubkey,
     last_update: i64,
 }
 
-#[derive(Debug, borsh::BorshDeserialize)]
+#[derive(Debug, Clone, borsh::BorshDeserialize)]
 pub struct Idle {
     sector: [i64; 2],
 }
 
-#[derive(Debug, borsh::BorshDeserialize)]
+#[derive(Debug, Clone, borsh::BorshDeserialize)]
 pub struct MineAsteroid {
     asteroid: Pubkey,
     resource: Pubkey,
@@ -166,7 +168,7 @@ pub struct MineAsteroid {
     last_update: i64,
 }
 
-#[derive(Debug, borsh::BorshDeserialize)]
+#[derive(Debug, Clone, borsh::BorshDeserialize)]
 pub struct MoveWarp {
     from_sector: [i64; 2],
     to_sector: [i64; 2],
@@ -174,18 +176,18 @@ pub struct MoveWarp {
     warp_finish: i64,
 }
 
-#[derive(Debug, borsh::BorshDeserialize)]
+#[derive(Debug, Clone, borsh::BorshDeserialize)]
 pub struct MoveSubwarp {
-    subwarp_speed: u32,
-    warp_speed: u32,
-    max_warp_distance: u16,
-    warp_cool_down: u16,
-    subwarp_fuel_consumption_rate: u32,
-    warp_fuel_consumption_rate: u32,
-    planet_exit_fuel_amount: u32,
+    from_sector: [i64; 2],
+    to_sector: [i64; 2],
+    current_sector: [i64; 2],
+    depature_time: i64,
+    arrival_time: i64,
+    fuel_expenditure: u64,
+    last_update: u64,
 }
 
-#[derive(Debug, borsh::BorshDeserialize)]
+#[derive(Debug, Clone, borsh::BorshDeserialize)]
 pub struct Respawn {
     sector: [i64; 2],
     start: i64,
@@ -224,7 +226,8 @@ pub struct ShipCounts {
 // #[zero_copy]
 #[derive(Debug, Copy, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
 #[repr(C)] // FIXME(?): cannot do `#[repr(C, packed)]` and `std::mem::size_of::<crate::ShipStats>() = 72`
-pub struct ShipStats { // FIXME: should this code be using `ShipStatsUnpacked` and not `ShipStats`?.
+pub struct ShipStats {
+    // FIXME: should this code be using `ShipStatsUnpacked` and not `ShipStats`?.
     /// Movement stats for the ship
     // #[strong_sub_struct]
     // #[packed_sub_struct]
@@ -298,7 +301,8 @@ pub struct CargoStats {
 // #[safe_zero_copy]
 #[zero_copy]
 #[derive(Debug, borsh::BorshDeserialize, borsh::BorshSerialize)] // StrongTypedStruct, Unpackable
-pub struct MiscStats { // FIXME: should this code be using `MiscStatsUnpacked` (16) and not `MiscStats` (12)?.
+pub struct MiscStats {
+    // FIXME: should this code be using `MiscStatsUnpacked` (16) and not `MiscStats` (12)?.
     /// Number of crew in the ship
     // #[fixed_point(1, Crew)]
     pub crew: u64,
@@ -318,7 +322,69 @@ pub mod staratlas;
 pub use crate::staratlas::cargo::CARGO_PROGRAM_ID;
 pub use crate::staratlas::player_profile::PROFILE_PROGRAM_ID;
 pub use crate::staratlas::profile_faction::PROFILE_FACTION_PROGRAM_ID;
-pub use crate::staratlas::sage::SAGE_PROGRAM_ID;
+pub use crate::staratlas::sage::{FleetState, SAGE_PROGRAM_ID};
+
+pub struct LabAssistant<'a, C: 'a> {
+    pub client: &'a Client<C>,
+    pub game: SagePlayerProfileGameState,
+    pub user_pubkey: Pubkey,
+    pub user_fleets: Vec<UserFleet>,
+}
+
+impl<'a, C: Deref<Target = impl Signer> + Clone> LabAssistant<'a, C> {
+    pub fn load_game(client: &'a Client<C>, user_pubkey: &Pubkey) -> anyhow::Result<Self> {
+        let game = init_sage_labs_game(client, user_pubkey)?;
+
+        let mut user_fleets = vec![];
+        for (pubkey, fleet) in game.user_fleet_accounts.iter() {
+            let (_fleet, fleet_state) = staratlas::sage::get_fleet_state(client, pubkey)?;
+            // dbg!(&fleet_state);
+
+            let fleet_label = str::from_utf8(&fleet.fleet_label)?;
+            let fleet_label_trimmed = fleet_label.trim_end_matches(char::from(0));
+
+            user_fleets.push(UserFleet {
+                pubkey: pubkey.to_owned(),
+                fleet: fleet.to_owned(),
+                fleet_label: fleet_label_trimmed.into(),
+                fleet_state: fleet_state.to_owned(),
+            });
+        }
+
+        Ok(LabAssistant {
+            client,
+            game,
+            user_pubkey: *user_pubkey,
+            user_fleets,
+        })
+    }
+}
+
+impl<'a, C: 'a> fmt::Debug for LabAssistant<'a, C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LabAssistant")
+            .field("user_pubkey", &self.user_pubkey)
+            .field("user_fleets", &self.user_fleets)
+            .finish()
+    }
+}
+
+pub struct UserFleet {
+    pubkey: Pubkey,
+    fleet: Fleet,
+    fleet_label: String,
+    fleet_state: FleetState,
+}
+
+impl fmt::Debug for UserFleet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UserFleet")
+            .field("pubkey", &self.pubkey)
+            .field("fleet_label", &self.fleet_label)
+            .field("fleet_state", &self.fleet_state)
+            .finish()
+    }
+}
 
 #[derive(Debug)]
 pub struct SagePlayerProfileGameState {
@@ -332,7 +398,7 @@ pub struct SagePlayerProfileGameState {
     pub user_profile_account: Account,
     pub profile_faction_pubkey: Pubkey,
     pub profile_faction_account: Account,
-    pub user_fleets: Vec<(Pubkey, Fleet)>,
+    pub user_fleet_accounts: Vec<(Pubkey, Fleet)>,
 }
 
 pub fn init_sage_labs_game<C: Deref<Target = impl Signer> + Clone>(
@@ -408,7 +474,7 @@ pub fn init_sage_labs_game<C: Deref<Target = impl Signer> + Clone>(
     // dbg!(&profile_faction_account);
 
     // User Fleet (Accounts)
-    let user_fleets =
+    let user_fleet_accounts =
         staratlas::sage::get_user_fleet_accounts(client, user_profile_pubkey)?.unwrap_or(vec![]);
 
     let state = SagePlayerProfileGameState {
@@ -422,7 +488,7 @@ pub fn init_sage_labs_game<C: Deref<Target = impl Signer> + Clone>(
         user_profile_account: user_profile_account.to_owned(),
         profile_faction_pubkey: *profile_faction_pubkey,
         profile_faction_account: profile_faction_account.to_owned(),
-        user_fleets,
+        user_fleet_accounts,
     };
 
     Ok(state)

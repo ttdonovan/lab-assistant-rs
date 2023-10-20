@@ -18,54 +18,70 @@ fn main() -> anyhow::Result<()> {
 
     // Player Pubkey goes here ("player-pubkey-here")...
     let user_pubkey = Pubkey::from_str("player-pubkey-here").expect("invalid user pubkey");
-    let game = labs::init_sage_labs_game(&client, &user_pubkey)?;
-    // dbg!(&game);
 
-    // dbg!(&game.cargo_stats_definition_accounts);
-    // dbg!(&game.cargo_type_accounts);
+    let lab_assistant = labs::LabAssistant::load_game(&client, &user_pubkey)?;
+    dbg!(&lab_assistant);
 
-    for (fleet_pubkey, fleet_account) in game.user_fleets.iter() {
-        let fleet_label = str::from_utf8(&fleet_account.fleet_label)?;
+    // let game: labs::SagePlayerProfileGameState = lab_assistant.game;
+    // // dbg!(&game);
 
-        dbg!(format!("Fleet: {}", fleet_label));
-        dbg!(&fleet_pubkey);
-        // dbg!(&fleet_account);
+    // // dbg!(&game.cargo_stats_definition_accounts);
+    // // dbg!(&game.cargo_type_accounts);
 
-        // FIXME: how to get "remaining data" to check fleet state? sorta works but do not understand bytes structur in `get_fleet_state`
-        let (fleet_pubkey2, _) = labs::staratlas::sage::fleet_find_address(
-            &game.game_id,
-            &game.user_profile_pubkey,
-            &fleet_account.fleet_label,
-        );
-        assert_eq!(fleet_pubkey, &fleet_pubkey2, "fleet pubkey mismatch");
+    // for (fleet_pubkey, fleet_account) in game.user_fleet_accounts.iter() {
+    //     let fleet_label = str::from_utf8(&fleet_account.fleet_label)?;
 
-        let (fleet_account2, fleet_state) =
-            labs::staratlas::sage::get_fleet_state(&client, &fleet_pubkey2)?;
+    //     dbg!(format!("Fleet: {}", fleet_label));
+    //     dbg!(&fleet_pubkey);
+    //     // dbg!(&fleet_account);
 
-        // FleetState appears to be correct...
-        dbg!(&fleet_state);
+    //     // FIXME: how to get "remaining data" to check fleet state? sorta works but do not understand bytes structur in `get_fleet_state`
+    //     let (fleet_pubkey2, _) = labs::staratlas::sage::fleet_find_address(
+    //         &game.game_id,
+    //         &game.user_profile_pubkey,
+    //         &fleet_account.fleet_label,
+    //     );
+    //     assert_eq!(fleet_pubkey, &fleet_pubkey2, "fleet pubkey mismatch");
 
-        let fleet_label2 = str::from_utf8(&fleet_account2.fleet_label);
-        dbg!(&fleet_label2);
+    //     let (_fleet_account2, fleet_state) =
+    //         labs::staratlas::sage::get_fleet_state(&client, &fleet_pubkey2)?;
 
-        // FIXME: these values do not align almost list &feet_account2.fleet_label is off by 8-bytes
-        //  thread 'main' panicked at lab-notebook\examples\00_skratchpad.rs:56:9:
-        //  assertion `left == right` failed: fleet account mismatch (fleet_label)
-        //  left: [65, 85, 84, 79, 45, 83, 68, 85, 45, 35, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        //  right: [32, 104, 71, 151, 50, 88, 206, 199, 65, 85, 84, 79, 45, 83, 68, 85, 45, 35, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        // assert_eq!(
-        //     &fleet_account.fleet_label, &fleet_account2.fleet_label,
-        //     "fleet account mismatch (fleet_label)"
-        // );
+    //     // FleetState appears to be correct...
+    //     dbg!(&fleet_state);
 
-        // process didn't exit successfully beasue of `aasert_eq!` above this hasn't been executed/checked
-        // assert_eq!(
-        //     &fleet_account.owner_profile, &fleet_account2.owner_profile,
-        //     "fleet account mismatch (owner_profile)"
-        // );
+    //     // let fleet_label2 = str::from_utf8(&fleet_account2.fleet_label);
+    //     // dbg!(&fleet_label2);
 
-        // break;
-    }
+    //     // FIXME: these values do not align almost list &feet_account2.fleet_label is off by 8-bytes
+    //     //  thread 'main' panicked at lab-notebook\examples\00_skratchpad.rs:56:9:
+    //     //  assertion `left == right` failed: fleet account mismatch (fleet_label)
+    //     //  left: [65, 85, 84, 79, 45, 83, 68, 85, 45, 35, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    //     //  right: [32, 104, 71, 151, 50, 88, 206, 199, 65, 85, 84, 79, 45, 83, 68, 85, 45, 35, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    //     // assert_eq!(
+    //     //     &fleet_account.fleet_label, &fleet_account2.fleet_label,
+    //     //     "fleet account mismatch (fleet_label)"
+    //     // );
+
+    //     // process didn't exit successfully beasue of `aasert_eq!` above this hasn't been executed/checked
+    //     // assert_eq!(
+    //     //     &fleet_account.owner_profile, &fleet_account2.owner_profile,
+    //     //     "fleet account mismatch (owner_profile)"
+    //     // );
+
+    //     dbg!(&fleet_account.cargo_hold);
+
+    //     let (fleet_repair_kit_token, _) =
+    //         labs::staratlas::sage::fleet_repair_kit_token_address(&fleet_account);
+    //     dbg!(&fleet_repair_kit_token);
+
+    //     let (fleet_sdu_token, _) = labs::staratlas::sage::fleet_sdu_token_address(&fleet_account);
+    //     dbg!(&fleet_sdu_token);
+
+    //     let (fleet_fuel_token, _) = labs::staratlas::sage::fleet_fuel_token_address(&fleet_account);
+    //     dbg!(&fleet_fuel_token);
+
+    //     // break;
+    // }
 
     // let (pubkey, _) = labs::staratlas::sage::starbase_find_address(&game.game_id, (40, 30));
     // dbg!(&pubkey);

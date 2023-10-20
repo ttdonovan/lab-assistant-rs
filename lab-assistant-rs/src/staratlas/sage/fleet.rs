@@ -4,6 +4,15 @@ use super::*;
 
 use crate::{Fleet, Idle, MineAsteroid, MoveSubwarp, MoveWarp, Respawn, StarbaseLoadingBay};
 
+const TOKEN_PROGRAM_ID: Pubkey = pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+const ASSOCIATED_TOKEN_PROGRAM_ID: Pubkey = pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+
+const AMMO_MINT: Pubkey = pubkey!("ammoK8AkX2wnebQb35cDAZtTkvsXQbi82cGeTnUvvfK");
+const FOOD_MINT: Pubkey = pubkey!("foodQJAztMzX1DKpLaiounNe2BDMds5RNuPC6jsNrDG");
+const FUEL_MINT: Pubkey = pubkey!("fueL3hBZjLLLJHiFH9cqZoozTG3XQZ53diwFPwbzNim");
+const TOOL_MINT: Pubkey = pubkey!("tooLsNYLiVqzg8o4m3L2Uetbn62mvMWRqkog6PQeYKL");
+const SDU_MINT: Pubkey = pubkey!("SDUsgfSZaDhhZ76U3ZgvtFiXsfnHbf2VrzYxjBZ5YbM");
+
 pub fn get_user_fleet_accounts<C: Deref<Target = impl Signer> + Clone>(
     client: &Client<C>,
     user_profile_pubkey: &Pubkey,
@@ -63,7 +72,40 @@ pub fn fleet_find_address(
     )
 }
 
-#[derive(Debug)]
+pub fn fleet_repair_kit_token_address(fleet: &Fleet) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[
+            &fleet.cargo_hold.to_bytes(),
+            &TOKEN_PROGRAM_ID.to_bytes(),
+            &TOOL_MINT.to_bytes(),
+        ],
+        &ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+}
+
+pub fn fleet_sdu_token_address(fleet: &Fleet) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[
+            &fleet.cargo_hold.to_bytes(),
+            &TOKEN_PROGRAM_ID.to_bytes(),
+            &SDU_MINT.to_bytes(),
+        ],
+        &ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+}
+
+pub fn fleet_fuel_token_address(fleet: &Fleet) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[
+            &fleet.cargo_hold.to_bytes(),
+            &TOKEN_PROGRAM_ID.to_bytes(),
+            &FUEL_MINT.to_bytes(),
+        ],
+        &ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+}
+
+#[derive(Debug, Clone)]
 pub enum FleetState {
     StarbaseLoadingBay(StarbaseLoadingBay),
     Idle(Idle),
