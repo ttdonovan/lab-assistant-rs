@@ -3,7 +3,11 @@ use anchor_client::{
         rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig},
         rpc_filter::{Memcmp, RpcFilterType},
     },
-    solana_sdk::{account::Account, commitment_config::CommitmentConfig, signature::Signer},
+    solana_sdk::{
+        account::Account,
+        commitment_config::CommitmentConfig,
+        signature::{Keypair, Signer},
+    },
     Client,
 };
 use anchor_lang::prelude::*;
@@ -88,7 +92,49 @@ pub struct Game {
     pub update_id: u64,
     profile: Pubkey,
     game_state: Pubkey,
+    points: Points,
+    cargo: Cargo,
+    crafting: Crafting,
+    mints: Mints,
+    vaults: Vaults,
+    // risk_zones: RiskZonesData
 }
+
+#[derive(Debug, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)]
+struct Points {
+    xp_points_category: Pubkey,
+    lp_points_category: Pubkey,
+}
+
+#[derive(Debug, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)]
+struct Cargo {
+    stats_definition: Pubkey,
+}
+
+#[derive(Debug, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)]
+struct Crafting {
+    domain: Pubkey,
+}
+
+#[derive(Debug, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)]
+struct Mints {
+    atlas: Pubkey,
+    polis: Pubkey,
+    ammo: Pubkey,
+    food: Pubkey,
+    fuel: Pubkey,
+    repair_kit: Pubkey,
+}
+
+#[derive(Debug, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)]
+struct Vaults {
+    atlas: Pubkey,
+    polis: Pubkey,
+}
+
+// #[derive(Debug, Clone, borsh::BorshDeserialize, borsh::BorshSerialize)]
+// struct RiskZonesData {
+// }
 
 #[account]
 #[derive(Debug)]
@@ -96,6 +142,33 @@ pub struct GameState {
     version: u8,
     update_id: u64,
     game_id: Pubkey,
+}
+
+#[account]
+#[derive(Debug)]
+pub struct MineItem {
+    version: u8,
+    game_id: Pubkey,
+    name: [u8; 64],
+    mine_item_update_id: u64,
+    resource_hardness: u16,
+    num_resrouce_accounts: u64,
+    bump: u8,
+}
+
+#[account]
+#[derive(Debug)]
+pub struct Resource {
+    version: u8,
+    game_id: Pubkey,
+    location: Pubkey,
+    mine_item: Pubkey,
+    location_type: u8,
+    system_richness: u16,
+    num_miners: u64,
+    mine_item_update_id: u64,
+    resource_update_id: u64,
+    bump: u8,
 }
 
 #[account]
@@ -318,7 +391,11 @@ pub struct MiscStats {
 }
 // [end - sage]
 
+pub mod commands;
+pub mod executors;
+pub mod handlers;
 pub mod staratlas;
+
 pub use crate::staratlas::cargo::CARGO_PROGRAM_ID;
 pub use crate::staratlas::player_profile::PROFILE_PROGRAM_ID;
 pub use crate::staratlas::profile_faction::PROFILE_FACTION_PROGRAM_ID;
@@ -358,6 +435,14 @@ impl<'a, C: Deref<Target = impl Signer> + Clone> LabAssistant<'a, C> {
             user_fleets,
         })
     }
+
+    pub fn get_game(&self) -> &Game {
+        &self.game.game_account
+    }
+
+    pub fn get_game_state(&self) -> &GameState {
+        &self.game.game_state_account
+    }
 }
 
 impl<'a, C: 'a> fmt::Debug for LabAssistant<'a, C> {
@@ -370,10 +455,19 @@ impl<'a, C: 'a> fmt::Debug for LabAssistant<'a, C> {
 }
 
 pub struct UserFleet {
-    pubkey: Pubkey,
+    pub pubkey: Pubkey,
     fleet: Fleet,
-    fleet_label: String,
+    pub fleet_label: String,
     fleet_state: FleetState,
+}
+
+impl UserFleet {
+    pub fn get_fleet_account(&self) -> &Fleet {
+        &self.fleet
+    }
+    pub fn get_fleet_state(&self) -> &FleetState {
+        &self.fleet_state
+    }
 }
 
 impl fmt::Debug for UserFleet {

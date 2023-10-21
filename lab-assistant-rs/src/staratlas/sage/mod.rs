@@ -11,6 +11,12 @@ pub use game_state::*;
 mod game;
 pub use game::*;
 
+mod mine_item;
+pub use mine_item::*;
+
+mod resource;
+pub use resource::*;
+
 mod starbase;
 pub use starbase::*;
 

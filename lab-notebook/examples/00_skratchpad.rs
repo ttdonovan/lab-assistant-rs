@@ -5,6 +5,7 @@ use anchor_client::{
 use std::str::{self, FromStr};
 
 use lab_assistant as labs;
+use labs::commands::Mine;
 
 const RPC_URL: &str = "https://solana-api.syndica.io/access-token/WPoEqWQ2auQQY1zHRNGJyRBkvfOLqw58FqYucdYtmy8q9Z84MBWwqtfVf8jKhcFh/rpc";
 
@@ -20,7 +21,39 @@ fn main() -> anyhow::Result<()> {
     let user_pubkey = Pubkey::from_str("player-pubkey-here").expect("invalid user pubkey");
 
     let lab_assistant = labs::LabAssistant::load_game(&client, &user_pubkey)?;
-    dbg!(&lab_assistant);
+    // dbg!(&lab_assistant);
+
+    let game_info = lab_assistant.get_game();
+    // dbg!(&game_info);
+
+    for (_idx, ufleet) in lab_assistant.user_fleets.iter().enumerate() {
+        if ufleet.fleet_label == "MINING#1" {
+            // dbg!(idx);
+            // dbg!(ufleet);
+
+            let fleet = &ufleet.pubkey;
+            let fleet_state = ufleet.get_fleet_state();
+            let fleet_info = ufleet.get_fleet_account();
+
+            let mine =
+                labs::handlers::handle_mining(&client, fleet, fleet_state, fleet_info, game_info)?;
+
+            match &mine {
+                Mine::StopMining { fleet, planet } => {
+                    dbg!(&fleet);
+                    dbg!(&planet);
+                    let _ = labs::executors::exec_stop_mining(
+                        &client, // &payer,
+                        // &game_info,
+                        &fleet, &planet,
+                    )?;
+                }
+                Mine::NoOp => {
+                    dbg!("NoOp");
+                }
+            }
+        }
+    }
 
     // let game: labs::SagePlayerProfileGameState = lab_assistant.game;
     // // dbg!(&game);

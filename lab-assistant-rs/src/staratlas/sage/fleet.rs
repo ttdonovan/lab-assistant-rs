@@ -4,9 +4,6 @@ use super::*;
 
 use crate::{Fleet, Idle, MineAsteroid, MoveSubwarp, MoveWarp, Respawn, StarbaseLoadingBay};
 
-const TOKEN_PROGRAM_ID: Pubkey = pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
-const ASSOCIATED_TOKEN_PROGRAM_ID: Pubkey = pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
-
 const AMMO_MINT: Pubkey = pubkey!("ammoK8AkX2wnebQb35cDAZtTkvsXQbi82cGeTnUvvfK");
 const FOOD_MINT: Pubkey = pubkey!("foodQJAztMzX1DKpLaiounNe2BDMds5RNuPC6jsNrDG");
 const FUEL_MINT: Pubkey = pubkey!("fueL3hBZjLLLJHiFH9cqZoozTG3XQZ53diwFPwbzNim");
@@ -123,11 +120,11 @@ pub fn get_fleet_state<C: Deref<Target = impl Signer> + Clone>(
 
     // get account data from solana network result is Vec<u8>
     let account_data = program.rpc().get_account_data(fleet)?;
-    dbg!(&account_data.len()); // &account_data.len() = 503
+    // dbg!(&account_data.len()); // &account_data.len() = 503
 
     // create a mut slice of account data
     let mut data_slice = account_data.as_slice();
-    dbg!(&data_slice.len()); // &data_slice.len() = 503
+    // dbg!(&data_slice.len()); // &data_slice.len() = 503
 
     // FIXME: this is not the correct fleet account when deserialized...
     //   but oddly the remaing data is correct... in most casts of testing "Idle" fleet state
@@ -141,33 +138,33 @@ pub fn get_fleet_state<C: Deref<Target = impl Signer> + Clone>(
     //     MOVEMENT_STATS_MIN_DATA_SIZE + CARGO_STATS_MIN_DATA_SIZE + MISC_STATS_MIN_DATA_SIZE;
     // const FLEET_MIN_DATA_SIZE: usize = 269 + SHIP_STATS_MIN_DATA_SIZE;
 
-    dbg!(std::mem::size_of::<crate::MovementStats>()); // std::mem::size_of::<crate::MovementStats>() = 24
-    dbg!(std::mem::size_of::<crate::CargoStats>()); // std::mem::size_of::<crate::CargoStats>() = 28
-    dbg!(std::mem::size_of::<crate::MiscStats>()); // std::mem::size_of::<crate::MiscStats>() = 16 (idl MiscStats and MiscStatsUnpacked)
-    dbg!(std::mem::size_of::<crate::ShipStats>()); // std::mem::size_of::<crate::ShipStats>() = 72 (idl ShipStats and ShipStatsUnpacked)
-    dbg!(std::mem::size_of::<crate::Fleet>()); // std::mem::size_of::<crate::Fleet>() = 416
+    // dbg!(std::mem::size_of::<crate::MovementStats>()); // std::mem::size_of::<crate::MovementStats>() = 24
+    // dbg!(std::mem::size_of::<crate::CargoStats>()); // std::mem::size_of::<crate::CargoStats>() = 28
+    // dbg!(std::mem::size_of::<crate::MiscStats>()); // std::mem::size_of::<crate::MiscStats>() = 16 (idl MiscStats and MiscStatsUnpacked)
+    // dbg!(std::mem::size_of::<crate::ShipStats>()); // std::mem::size_of::<crate::ShipStats>() = 72 (idl ShipStats and ShipStatsUnpacked)
+    // dbg!(std::mem::size_of::<crate::Fleet>()); // std::mem::size_of::<crate::Fleet>() = 416
 
     let fleet_account = Fleet::deserialize(&mut data_slice)?;
 
     // return the fleet label from the account for debugging
     let fleet_label = std::str::from_utf8(&fleet_account.fleet_label);
-    dbg!(&fleet_label); // Uta8Error
+    // dbg!(&fleet_label); // Uta8Error
 
     // FIXME: no idea what these 8-bytes represent here...
     let unkown_slice = data_slice.get(..8).unwrap();
-    dbg!(&unkown_slice); // mostly something like this... [0, 0, 0, 0, 0, 0, 0, 255] (sometimes 254 and 253, depending on fleet &Pubkey)
-    dbg!(&unkown_slice.len()); // &unkown_slice.len() = 8
+    // dbg!(&unkown_slice); // mostly something like this... [0, 0, 0, 0, 0, 0, 0, 255] (sometimes 254 and 253, depending on fleet &Pubkey)
+    // dbg!(&unkown_slice.len()); // &unkown_slice.len() = 8
 
     // believe this is the "remaining data" to determine a fleet state
     let remaining_data = data_slice.get(8..).unwrap();
     // dbg!(&remaining_data);
-    dbg!(&remaining_data.len()); // &remaining_data.len() = 89
+    // dbg!(&remaining_data.len()); // &remaining_data.len() = 89
 
     let discrimiator = remaining_data[0];
     let mut remaining_data = remaining_data.get(1..).unwrap();
 
-    dbg!(&discrimiator); // mostly 1 for Idle fleet state
-    dbg!(&remaining_data.len()); // &remaining_data.len() = 88
+    // dbg!(&discrimiator); // mostly 1 for Idle fleet state
+    // dbg!(&remaining_data.len()); // &remaining_data.len() = 88
 
     let fleet_state = match discrimiator {
         0 => {
