@@ -198,3 +198,156 @@ pub fn get_fleet_state<C: Deref<Target = impl Signer> + Clone>(
 
     Ok((fleet_account, fleet_state))
 }
+
+//  /**
+//    * Generic asteroid mining handler
+//    * @param program - SAGE program
+//    * @param cargoProgram - cargo program
+//    * @param profileFaction - the faction of the profile that owns the fleet that is mining
+//    * @param fleet - the fleet
+//    * @param starbase - the Starbase
+//    * @param mineItem - the mine item
+//    * @param resource - the resource
+//    * @param planet - the planet
+//    * @param cargoHold - the fleet cargo hold cargo pod
+//    * @param ammoBank - the fleet ammo bank cargo pod
+//    * @param foodCargoType - the food cargo type
+//    * @param ammoCargoType - the ammo cargo type
+//    * @param resourceCargoType - the cargo type for the resource being mined
+//    * @param cargoStatsDefinition - the cargo stats definition
+//    * @param gameState - the game state. No longer used, maintained for backwards compatibility
+//    * @param gameId - the SAGE game id
+//    * @param foodTokenFrom - the source token account for food
+//    * @param ammoTokenFrom - the source token account for ammo
+//    * @param resourceTokenFrom - the source token account for the resource
+//    * @param resourceTokenTo - the destination token account for the resource
+//    * @param foodMint - the food token mint
+//    * @param ammoMint - the ammo token mint
+//    * @returns InstructionReturn
+// */
+// static asteroidMiningHandler(
+//     program: SageIDLProgram,
+//     cargoProgram: CargoIDLProgram,
+//     profileFaction: PublicKey,
+//     fleet: PublicKey,
+//     starbase: PublicKey,
+//     mineItem: PublicKey,
+//     resource: PublicKey,
+//     planet: PublicKey,
+//     cargoHold: PublicKey,
+//     ammoBank: PublicKey,
+//     foodCargoType: PublicKey,
+//     ammoCargoType: PublicKey,
+//     resourceCargoType: PublicKey,
+//     cargoStatsDefinition: PublicKey,
+//     gameState: PublicKey,
+//     gameId: PublicKey,
+//     foodTokenFrom: PublicKey,
+//     ammoTokenFrom: PublicKey,
+//     resourceTokenFrom: PublicKey,
+//     resourceTokenTo: PublicKey,
+//     foodMint: PublicKey,
+//     ammoMint: PublicKey,
+//   ): InstructionReturn {
+//     return this.fleetStateHandler(program, fleet, [
+//       { pubkey: profileFaction, isSigner: false, isWritable: false },
+//       { pubkey: cargoHold, isSigner: false, isWritable: true },
+//       { pubkey: ammoBank, isSigner: false, isWritable: true },
+//       { pubkey: mineItem, isSigner: false, isWritable: false },
+//       { pubkey: resource, isSigner: false, isWritable: true },
+//       { pubkey: planet, isSigner: false, isWritable: true },
+//       { pubkey: starbase, isSigner: false, isWritable: false },
+//       { pubkey: foodTokenFrom, isSigner: false, isWritable: true },
+//       { pubkey: ammoTokenFrom, isSigner: false, isWritable: true },
+//       { pubkey: resourceTokenFrom, isSigner: false, isWritable: true },
+//       { pubkey: resourceTokenTo, isSigner: false, isWritable: true },
+//       { pubkey: foodMint, isSigner: false, isWritable: true },
+//       { pubkey: ammoMint, isSigner: false, isWritable: true },
+//       { pubkey: foodCargoType, isSigner: false, isWritable: false },
+//       { pubkey: ammoCargoType, isSigner: false, isWritable: false },
+//       { pubkey: resourceCargoType, isSigner: false, isWritable: false },
+//       {
+//         pubkey: cargoStatsDefinition,
+//         isSigner: false,
+//         isWritable: false,
+//       },
+//       { pubkey: gameId, isSigner: false, isWritable: false },
+//       {
+//         pubkey: cargoProgram.programId,
+//         isSigner: false,
+//         isWritable: false,
+//       },
+//       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+//     ]);
+//   }
+
+// /**
+//    * Stop mining an asteroid
+//    * @param program - SAGE program
+//    * @param cargoProgram - cargo program
+//    * @param key - the key authorized to run this instruction
+//    * @param playerProfile - the profile with the required permissions for the instruction
+//    * @param profileFaction - the profile's faction
+//    * @param fleet - the fleet
+//    * @param resource - the resource
+//    * @param planet - the planet
+//    * @param fuelTank - the fleet's fuel tank cargo pod
+//    * @param fuelCargoType - the fuel cargo type
+//    * @param cargoStatsDefinition - the cargo stats definition
+//    * @param gameState - the game state
+//    * @param gameId - the SAGE game id
+//    * @param fuelTokenFrom - the source token account for fuel
+//    * @param fuelMint - the fuel token mint
+//    * @param input - the instruction input params
+//    * @returns InstructionReturn
+//    */
+//   static stopMiningAsteroid(
+//     program: SageIDLProgram,
+//     cargoProgram: CargoIDLProgram,
+//     key: AsyncSigner,
+//     playerProfile: PublicKey,
+//     profileFaction: PublicKey,
+//     fleet: PublicKey,
+//     resource: PublicKey,
+//     planet: PublicKey,
+//     fuelTank: PublicKey,
+//     fuelCargoType: PublicKey,
+//     cargoStatsDefinition: PublicKey,
+//     gameState: PublicKey,
+//     gameId: PublicKey,
+//     fuelTokenFrom: PublicKey,
+//     fuelMint: PublicKey,
+//     input: StopMiningAsteroidInput,
+//   ): InstructionReturn {
+//     return async () => [
+//       {
+//         instruction: await program.methods
+//           .stopMiningAsteroid(input)
+//           .accountsStrict({
+//             gameAccountsFleetAndOwner: {
+//               gameFleetAndOwner: {
+//                 fleetAndOwner: {
+//                   fleet,
+//                   owningProfile: playerProfile,
+//                   owningProfileFaction: profileFaction,
+//                   key: key.publicKey(),
+//                 },
+//                 gameId,
+//               },
+//               gameState,
+//             },
+//             resource,
+//             planet,
+//             fuelTank,
+//             cargoType: fuelCargoType,
+//             cargoStatsDefinition,
+//             tokenFrom: fuelTokenFrom,
+//             tokenMint: fuelMint,
+//             cargoProgram: cargoProgram.programId,
+//             tokenProgram: TOKEN_PROGRAM_ID,
+//           })
+//           .instruction(),
+//         signers: [key],
+//       },
+//     ];
+//   }}
