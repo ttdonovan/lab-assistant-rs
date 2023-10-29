@@ -1,14 +1,33 @@
-# lab-assistant-rs
+# Lab Assistant
 
-A framework for building automations within [Star Atlas](https://staratlas.com/) - SAGE Labs.
+A collection of tools to help with the automation in game play of [Star Atlas](https://staratlas.com/) - SAGE Labs.
 
 See [https://play.staratlas.com]() for more details.
 
-## Rust Setup
+Development languages of choice:
+
+* Rust
+* TypeScript
+
+If found useful, please consider donating to support continue/future development:
+
+> 
+
+## lab-assistant-ts - (Active Development)
+
+Goal is to create a simpler interface/sdk to issue commands to Sage Labs using TypeScript bindings.
+
+See [lab-assistant-ts/README.md](lab-assistant-ts/README.md) for more details.
+
+## lab-assistant-rs - (Development on Hold)
+
+A framework for building automations within [Star Atlas](https://staratlas.com/) - SAGE Labs.
+
+### Rust Setup
 
 See [rustup.rs](https://rustup.rs/) for toolchain installation.
 
-## Development Setup
+### Development Setup
 
 ```
     git submodule init
@@ -16,7 +35,7 @@ See [rustup.rs](https://rustup.rs/) for toolchain installation.
     # git submodule update --remote --merge
 ```
 
-## Usage
+### Usage
 
 Create your own scripts and place them in `lab-notebook/examples`, use `00_skratchpad.rs`
 as a template for basic setup and usage.
@@ -25,7 +44,7 @@ as a template for basic setup and usage.
     cargo run -p lab-notebook --example 00_skratchpad
 ```
 
-## Requests For Help
+### Requests For Help
 
 1. See `lab-notebook/examples/00_skratchpad.rs` (dbg! and comments) and `lab-assistant-rs/src/lib.rs`.
 
@@ -73,3 +92,4 @@ or place all `calculate_*` functions in `staratlast::stage::fleet`?
 ## Credits
 
 * Inspired by [Lab-Assistant](https://github.com/ImGroovin/Lab-Assistant).
+* To all those have graciously helped from `#community-devlopers` channel on Star Atlas Discord.

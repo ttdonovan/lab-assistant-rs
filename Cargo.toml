@@ -4,5 +4,4 @@ resolver = "2"
 members = [
     "lab-assistant-rs",
     "lab-notebook",
-    "wasm-lab-assistant",
 ]
