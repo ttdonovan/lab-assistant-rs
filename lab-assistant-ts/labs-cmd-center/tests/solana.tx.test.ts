@@ -2,6 +2,7 @@ import { describe, expect, test, beforeAll } from 'bun:test';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
 
+import { byteArrayToString } from '@staratlas/data-source';
 import { Fleet } from '@staratlas/sage';
 
 import { SageGameHandler } from '../src/sageGameHandler';
@@ -13,18 +14,22 @@ let sageGameHandler: SageGameHandler;
 
 // Warning: This function will send transactions to the Solana network (if ENABLED_TX = true)
 const sendSageGameTx = async (gameHander: SageGameHandler, tx: any) => {
-    const ENABLED_TX = true;
+    const ENABLED_TX = false;
 
-    console.log('--- [tx: start] ---')
+    console.log('--- [tx (build): start] ---')
     console.log(tx);
-    console.log('--- [tx: end] ---')
+    console.log('--- [tx (build): end] ---')
 
     if (ENABLED_TX) {
-        console.log('--- [rx: start] ---')
+        console.log('--- [rx (send): start] ---')
         let rx = await sageGameHandler.sendTransaction(tx);
         console.log(rx);
-        console.log('--- [rx: start] ---')
+        console.log('--- [rx (send): start] ---')
     }
+
+    // const hexString = '0x1770';
+    // const decimal = parseInt(hexString, 16);
+    // console.log('Error:', decimal);
 }
 
 beforeAll(async () => {
@@ -62,10 +67,36 @@ describe('SAGE Labs (tx)', () => {
         sageFleetHandler = new SageFleetHandler(sageGameHandler);
     });
 
-    describe('Fleet Handler - Mining Actions', () => {
-        const miningFleetName = 'MINING#1';
-
+    describe('Fleet Handler - Docking Actions', () => {
         beforeAll(async () => {
+            const cargoFleetName = 'CARGO#1';
+            fleetPubkey = sageGameHandler.getFleetAddress(playerProfilePubkey, cargoFleetName);
+            fleetAccount = await sageFleetHandler.getFleetAccount(fleetPubkey);
+        });
+
+        // TODO: dock/undock `fleetCRUD.test.tx` - 'undock then dock fleet'
+
+        // error: failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x1770
+        test.skip('Dock to Starbase', async () => {
+            if (fleetAccount.state.Idle) {
+                let ix = await sageFleetHandler.ixDockToStarbase(fleetPubkey);
+                let tx = await sageGameHandler.buildAndSignTransaction(ix);
+                await sendSageGameTx(sageGameHandler, tx);
+            }
+        });
+
+        test.skip('Undock from Starbase', async () => {
+            if (fleetAccount.state.StarbaseLoadingBay) {
+                let ix = await sageFleetHandler.ixUndockFromStarbase(fleetPubkey);
+                let tx = await sageGameHandler.buildAndSignTransaction(ix);
+                await sendSageGameTx(sageGameHandler, tx);
+            }
+        });
+    })
+
+    describe.skip('Fleet Handler - Mining Actions', () => {
+        beforeAll(async () => {
+            const miningFleetName = 'MINING#1';
             fleetPubkey = sageGameHandler.getFleetAddress(playerProfilePubkey, miningFleetName);
             fleetAccount = await sageFleetHandler.getFleetAccount(fleetPubkey);
             // console.log(fleetAccount);
@@ -79,7 +110,7 @@ describe('SAGE Labs (tx)', () => {
             }
         });
 
-        test.skip('FleetHandler - Stop Mining', async () => {
+        test.skip('Stop Mining', async () => {
             if (fleetAccount.state.MineAsteroid) {
                 let ix = await sageFleetHandler.ixStopMining(fleetPubkey);
                 let tx = await sageGameHandler.buildAndSignTransaction(ix);

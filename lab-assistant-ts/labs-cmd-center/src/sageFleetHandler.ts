@@ -9,7 +9,9 @@ import {
     Resource,
     Starbase,
     Sector,
-    StartMiningAsteroidInput,StopMiningAsteroidInput
+    LoadingBayToIdleInput,
+    StartMiningAsteroidInput,
+    StopMiningAsteroidInput,
 } from '@staratlas/sage';
 
 import { SageGameHandler } from './sageGameHandler';
@@ -89,6 +91,94 @@ export class SageFleetHandler {
         );
 
         return starbase;
+    }
+
+    async ixDockToStarbase(fleetPubkey: PublicKey): Promise<InstructionReturn[]> {
+        const fleetAccount = await this.getFleetAccount(fleetPubkey);
+
+        // TODO: ensure fleet state is "Idle" - is there a better way to do this?
+        if (!fleetAccount.state.Idle && !this._gameHandler.game) {
+            throw 'fleet is not idle (or game is not loaded)';
+        }
+
+        const ixs: InstructionReturn[] = [];
+
+        const coordinates = fleetAccount.state.Idle?.sector as [BN, BN];
+
+        const starbaseKey = await this._gameHandler.getStarbaseAddress(coordinates);
+        const starbaseAccount = await this.getStarbaseAccount(starbaseKey);
+
+        const playerProfile = fleetAccount.data.ownerProfile;
+        const sagePlayerProfile = await this._gameHandler.getSagePlayerProfileAddress(playerProfile);
+        const starbasePlayerKey = await this._gameHandler.getStarbasePlayerAddress(starbaseKey, sagePlayerProfile, starbaseAccount.data.seqId);
+
+        const program = this._gameHandler.program;
+        const key = this._gameHandler.funder;
+        const profileFaction = this._gameHandler.getProfileFactionAddress(playerProfile);
+        const fleetKey = fleetAccount.key;
+        const gameId = this._gameHandler.gameId as PublicKey;
+        const gameState = this._gameHandler.gameState as PublicKey;
+        const input = 0 as LoadingBayToIdleInput; // TODO: when would this change?
+
+        const ix_1 = Fleet.idleToLoadingBay(
+            program,
+            key,
+            playerProfile,
+            profileFaction,
+            fleetKey,
+            starbaseKey,
+            starbasePlayerKey,
+            gameId,
+            gameState,
+            input,
+        );
+
+        ixs.push(ix_1);
+
+        return ixs;
+    }
+
+    async ixUndockFromStarbase(fleetPubkey: PublicKey): Promise<InstructionReturn[]> {
+        const fleetAccount = await this.getFleetAccount(fleetPubkey);
+
+        // TODO: ensure fleet state is "StarbaseLoadingBay" - is there a better way to do this?
+        if (!fleetAccount.state.StarbaseLoadingBay && !this._gameHandler.game) {
+            throw 'fleet is not at starbase loading bay (or game is not loaded)';
+        }
+
+        const ixs: InstructionReturn[] = [];
+
+        const starbaseKey = fleetAccount.state.StarbaseLoadingBay?.starbase as PublicKey;
+        const starbaseAccount = await this.getStarbaseAccount(starbaseKey);
+
+        const playerProfile = fleetAccount.data.ownerProfile;
+        const sagePlayerProfile = await this._gameHandler.getSagePlayerProfileAddress(playerProfile);
+        const starbasePlayerKey = await this._gameHandler.getStarbasePlayerAddress(starbaseKey, sagePlayerProfile, starbaseAccount.data.seqId);
+
+        const program = this._gameHandler.program;
+        const key = this._gameHandler.funder;
+        const profileFaction = this._gameHandler.getProfileFactionAddress(playerProfile);
+        const fleetKey = fleetAccount.key;
+        const gameId = this._gameHandler.gameId as PublicKey;
+        const gameState = this._gameHandler.gameState as PublicKey;
+        const input = 0 as LoadingBayToIdleInput; // TODO: when would this change?
+
+        const ix_1 = Fleet.loadingBayToIdle(
+            program,
+            key,
+            playerProfile,
+            profileFaction,
+            fleetKey,
+            starbaseKey,
+            starbasePlayerKey,
+            gameId,
+            gameState,
+            input,
+        );
+
+        ixs.push(ix_1);
+
+        return ixs;
     }
 
     async ixStartMining(fleetPubkey: PublicKey, resource: string): Promise<InstructionReturn[]> {
