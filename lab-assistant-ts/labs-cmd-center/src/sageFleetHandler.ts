@@ -1,7 +1,10 @@
-import { BN } from '@project-serum/anchor';
+import { BN, Program } from '@project-serum/anchor';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
 import { readFromRPCOrError, InstructionReturn, createAssociatedTokenAccountIdempotent } from '@staratlas/data-source';
+import {
+    CARGO_IDL,
+} from '@staratlas/cargo';
 import {
     Fleet,
     MineItem,
@@ -12,6 +15,8 @@ import {
     LoadingBayToIdleInput,
     StartMiningAsteroidInput,
     StopMiningAsteroidInput,
+    DepositCargoToFleetInput,
+    WithdrawCargoFromFleetInput,
 } from '@staratlas/sage';
 
 import { SageGameHandler } from './sageGameHandler';
@@ -326,28 +331,6 @@ export class SageFleetHandler {
             ammoMint,
         );
 
-        // // Debugging - tx instruction simulation errors
-        // console.log("profileFaction", profileFaction.toBase58()); // Owner: pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq
-        // console.log("fleetKey", fleetKey.toBase58()); // Owner: SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6
-        // console.log("starbaseKey", starbaseKey.toBase58()); // Owner: SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6
-        // console.log("mineItemKey", mineItemKey.toBase58()); // Owner: SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6
-        // console.log("resourceKey", resourceKey.toBase58()); // Owner: SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6
-        // console.log("planetKey", planetKey.toBase58()); // Owner: SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6
-        // console.log("cargoHold", cargoHold.toBase58()); // Owner: Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH
-        // console.log("ammoBank", ammoBank.toBase58()); // Owner: Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH
-        // console.log("foodCargoType", foodCargoType.toBase58()); // Owner: Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH
-        // console.log("ammoCargoType", ammoCargoType.toBase58()); // Owner: Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH
-        // console.log("resourceCargoType", resourceCargoType.toBase58()); // Owner: Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH
-        // console.log("cargoStatsDefinition", cargoStatsDefinition.toBase58()); // Owner: Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH
-        // console.log("gameState", gameState.toBase58()); // Owner: SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6
-        // console.log("gameId", gameId.toBase58()); // Owner: SAGEqqFewepDHH6hMDcmWy7yjHPpyKLDnRXKb3Ki8e6
-        // console.log("foodTokenFrom", foodTokenFrom.toBase58()); // Owner: cargoHold
-        // console.log("ammoTokenFrom", ammoTokenFrom.toBase58()); // Owner: Cargo8a1e6NkGyrjy4BQEW4ASGKs9KSyDyUrXMfpJoiH
-        // console.log("resourceTokenFrom", resourceTokenFrom.toBase58()); // Owner: mineItemKey
-        // console.log("resourceTokenTo", resourceTokenTo.toBase58()); // Owner: ATA (mint, cargoHold)
-        // console.log("foodMint", foodMint.toBase58()); // foodQJAztMzX1DKpLaiounNe2BDMds5RNuPC6jsNrDG
-        // console.log("ammoMint", ammoMint.toBase58()); // ammoK8AkX2wnebQb35cDAZtTkvsXQbi82cGeTnUvvfK
-
         ixs.push(ix_1);
 
         const key = this._gameHandler.funder;
@@ -377,6 +360,202 @@ export class SageFleetHandler {
         );
 
         ixs.push(ix_2);
+
+        return ixs;
+    }
+
+    async ixDepositCargoToFleet(fleetPubkey: PublicKey, tokenMint: PublicKey, amount: BN): Promise<InstructionReturn[]> {
+        const fleetAccount = await this.getFleetAccount(fleetPubkey);
+
+        // TODO: ensure fleet state is "StarbaseLoadingBay" - is there a better way to do this?
+        if (!fleetAccount.state.StarbaseLoadingBay && !this._gameHandler.game) {
+            throw 'fleet is not at starbase loading bay (or game is not loaded)';
+        }
+
+        const ixs: InstructionReturn[] = [];
+
+        const playerProfileKey = fleetAccount.data.ownerProfile;
+        const starbaseKey = fleetAccount.state.StarbaseLoadingBay?.starbase as PublicKey;
+
+        const starbaseAccount = await this.getStarbaseAccount(starbaseKey);
+        const sagePlayerProfile = await this._gameHandler.getSagePlayerProfileAddress(playerProfileKey);
+        const starbasePlayerKey = await this._gameHandler.getStarbasePlayerAddress(starbaseKey, sagePlayerProfile, starbaseAccount.data.seqId);
+
+        // FIXME: how is this different from `this._gameHandler.cargoProgram`?
+        const cargo = new Program(
+            CARGO_IDL,
+            new PublicKey(SageGameHandler.CARGO_PROGRAM_ID),
+            this._gameHandler.provider,
+        );
+        const spbCargoHolds = await cargo.account.cargoPod.all([
+            {
+                memcmp: {
+                    offset: 41,
+                    bytes: starbasePlayerKey.toBase58(),
+                },
+            },
+        ]);
+
+        if (spbCargoHolds.length !== 1) {
+            throw 'expected to find one cargo pod for the starbase player';
+        }
+
+        const starbasePlayerCargoHolds = spbCargoHolds[0];
+
+        const program = this._gameHandler.program;
+        const cargoProgram = this._gameHandler.cargoProgram;
+        const key = this._gameHandler.funder;
+        const fundsToKey = this._gameHandler.funder.publicKey();
+        const profileFactionKey = this._gameHandler.getProfileFactionAddress(playerProfileKey);
+        const fleetKey = fleetPubkey;
+
+        // TODO: refactor this and along with `ixWithdrawCargoFromFleet`
+        const cargoPodFromKey = starbasePlayerCargoHolds.publicKey;
+        const cargoPodToKey = fleetAccount.data.cargoHold;
+
+        const tokenAccounts = await this._gameHandler.getParsedTokenAccountsByOwner(cargoPodFromKey);
+        const tokenAccount = tokenAccounts.find((tokenAccount) => tokenAccount.mint.toBase58() === tokenMint.toBase58());
+
+        if (!tokenAccount) {
+            throw 'token account not found';
+        }
+
+        amount = amount > tokenAccount.amount ? new BN(tokenAccount.amount) : amount;
+
+        const cargoType = this._gameHandler.getCargoTypeAddress(tokenMint);
+        const cargoStatsDefinition = this._gameHandler.cargoStatsDefinition as PublicKey;
+        const gameId = this._gameHandler.gameId as PublicKey;
+        const gameState = this._gameHandler.gameState as PublicKey;
+        const input = { keyIndex: 0, amount } as DepositCargoToFleetInput;
+
+        const tokenFrom = await getAssociatedTokenAddress(tokenMint, cargoPodFromKey, true);
+        const ataTokenTo = await createAssociatedTokenAccountIdempotent(tokenMint, cargoPodToKey, true);
+        const tokenTo = ataTokenTo.address;
+        const ix_0 = ataTokenTo.instructions;
+
+        ixs.push(ix_0);
+
+        const ix_1 = Fleet.depositCargoToFleet(
+            program,
+            cargoProgram,
+            key,
+            playerProfileKey,
+            profileFactionKey,
+            fundsToKey,
+            starbaseKey,
+            starbasePlayerKey,
+            fleetKey,
+            cargoPodFromKey,
+            cargoPodToKey,
+            cargoType,
+            cargoStatsDefinition,
+            tokenFrom,
+            tokenTo,
+            tokenMint,
+            gameId,
+            gameState,
+            input,
+        );
+
+        ixs.push(ix_1);
+
+        return ixs;
+    }
+
+    async ixWithdrawCargoFromFleet(fleetPubkey: PublicKey, tokenMint: PublicKey, amount: BN): Promise<InstructionReturn[]>  {
+        const fleetAccount = await this.getFleetAccount(fleetPubkey);
+
+        // TODO: ensure fleet state is "StarbaseLoadingBay" - is there a better way to do this?
+        if (!fleetAccount.state.StarbaseLoadingBay && !this._gameHandler.game) {
+            throw 'fleet is not at starbase loading bay (or game is not loaded)';
+        }
+
+        const ixs: InstructionReturn[] = [];
+
+        const playerProfileKey = fleetAccount.data.ownerProfile;
+        const starbaseKey = fleetAccount.state.StarbaseLoadingBay?.starbase as PublicKey;
+
+        const starbaseAccount = await this.getStarbaseAccount(starbaseKey);
+        const sagePlayerProfile = await this._gameHandler.getSagePlayerProfileAddress(playerProfileKey);
+        const starbasePlayerKey = await this._gameHandler.getStarbasePlayerAddress(starbaseKey, sagePlayerProfile, starbaseAccount.data.seqId);
+
+        // FIXME: how is this different from `this._gameHandler.cargoProgram`?
+        const cargo = new Program(
+            CARGO_IDL,
+            new PublicKey(SageGameHandler.CARGO_PROGRAM_ID),
+            this._gameHandler.provider,
+        );
+        const spbCargoHolds = await cargo.account.cargoPod.all([
+            {
+                memcmp: {
+                    offset: 41,
+                    bytes: starbasePlayerKey.toBase58(),
+                },
+            },
+        ]);
+
+        if (spbCargoHolds.length !== 1) {
+            throw 'expected to find one cargo pod for the starbase player';
+        }
+
+        const starbasePlayerCargoHolds = spbCargoHolds[0];
+
+        const program = this._gameHandler.program;
+        const cargoProgram = this._gameHandler.cargoProgram;
+        const key = this._gameHandler.funder;
+        const fundsToKey = this._gameHandler.funder.publicKey();
+        const profileFactionKey = this._gameHandler.getProfileFactionAddress(playerProfileKey);
+        const fleetKey = fleetPubkey;
+
+        // TODO: refactor this and along with `ixDepositCargoToFleet`
+        const cargoPodFromKey = fleetAccount.data.cargoHold;
+        const cargoPodToKey = starbasePlayerCargoHolds.publicKey;
+ 
+        const tokenAccounts = await this._gameHandler.getParsedTokenAccountsByOwner(cargoPodFromKey);
+        const tokenAccount = tokenAccounts.find((tokenAccount) => tokenAccount.mint.toBase58() === tokenMint.toBase58());
+
+        if (!tokenAccount) {
+            throw 'token account not found';
+        }
+
+        amount = amount > tokenAccount.amount ? new BN(tokenAccount.amount) : amount;
+
+        const cargoType = this._gameHandler.getCargoTypeAddress(tokenMint);
+        const cargoStatsDefinition = this._gameHandler.cargoStatsDefinition as PublicKey;
+        const gameId = this._gameHandler.gameId as PublicKey;
+        const gameState = this._gameHandler.gameState as PublicKey;
+        const input = { keyIndex: 0, amount } as WithdrawCargoFromFleetInput;
+
+        const tokenFrom = await getAssociatedTokenAddress(tokenMint, cargoPodFromKey, true);
+        const ataTokenTo = await createAssociatedTokenAccountIdempotent(tokenMint, cargoPodToKey, true);
+        const tokenTo = ataTokenTo.address;
+        const ix_0 = ataTokenTo.instructions;
+
+        ixs.push(ix_0);
+
+        const ix_1 = Fleet.withdrawCargoFromFleet(
+            program,
+            cargoProgram,
+            key,
+            fundsToKey,
+            playerProfileKey,
+            profileFactionKey,
+            starbaseKey,
+            starbasePlayerKey,
+            fleetKey,
+            cargoPodFromKey,
+            cargoPodToKey,
+            cargoType,
+            cargoStatsDefinition,
+            tokenFrom,
+            tokenTo,
+            tokenMint,
+            gameId,
+            gameState,
+            input,
+        );
+
+        ixs.push(ix_1);
 
         return ixs;
     }

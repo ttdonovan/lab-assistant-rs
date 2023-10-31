@@ -1,4 +1,5 @@
 import { describe, expect, test, beforeAll } from 'bun:test';
+import { BN } from '@project-serum/anchor';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -24,10 +25,11 @@ const sendSageGameTx = async (gameHander: SageGameHandler, tx: any) => {
         console.log('--- [rx (send): start] ---')
         let rx = await sageGameHandler.sendTransaction(tx);
         console.log(rx);
-        console.log('--- [rx (send): start] ---')
+        expect(rx.value.isOk()).toBe(true);
+        console.log('--- [rx (send): start] ---');
     }
 
-    // const hexString = '0x1770';
+    // const hexString = '0x177b';
     // const decimal = parseInt(hexString, 16);
     // console.log('Error:', decimal);
 }
@@ -67,7 +69,7 @@ describe('SAGE Labs (tx)', () => {
         sageFleetHandler = new SageFleetHandler(sageGameHandler);
     });
 
-    describe('Fleet Handler - Docking Actions', () => {
+    describe.skip('Fleet Handler - Docking Actions', () => {
         beforeAll(async () => {
             const cargoFleetName = 'CARGO#1';
             fleetPubkey = sageGameHandler.getFleetAddress(playerProfilePubkey, cargoFleetName);
@@ -113,6 +115,34 @@ describe('SAGE Labs (tx)', () => {
         test.skip('Stop Mining', async () => {
             if (fleetAccount.state.MineAsteroid) {
                 let ix = await sageFleetHandler.ixStopMining(fleetPubkey);
+                let tx = await sageGameHandler.buildAndSignTransaction(ix);
+                await sendSageGameTx(sageGameHandler, tx);
+            }
+        });
+    });
+
+    describe.skip('Fleet Handler - Cargo Actions', () => {
+        beforeAll(async () => {
+            const cargoFleetName = 'CARGO#1';
+            fleetPubkey = sageGameHandler.getFleetAddress(playerProfilePubkey, cargoFleetName);
+            fleetAccount = await sageFleetHandler.getFleetAccount(fleetPubkey);
+        });
+
+        test.skip('Depost Cargo to Fleet', async () => {
+            if (fleetAccount.state.StarbaseLoadingBay) {
+                const mintToken = sageGameHandler.mints?.food as PublicKey;
+                let ix = await sageFleetHandler.ixDepositCargoToFleet(fleetPubkey, mintToken, new BN(100));
+                let tx = await sageGameHandler.buildAndSignTransaction(ix);
+                await sendSageGameTx(sageGameHandler, tx);
+            }
+        });
+
+        test.skip('Withdraw Cargo from Fleet', async () => {
+            if (fleetAccount.state.StarbaseLoadingBay) {
+                // note if amount is greater than the amount in the fleet's cargo,
+                // the balance of the token account's amount will be used instead
+                const mintToken = sageGameHandler.getResourceMintAddress('hydrogen');
+                let ix = await sageFleetHandler.ixWithdrawCargoFromFleet(fleetPubkey, mintToken, new BN(9_999_999));
                 let tx = await sageGameHandler.buildAndSignTransaction(ix);
                 await sendSageGameTx(sageGameHandler, tx);
             }

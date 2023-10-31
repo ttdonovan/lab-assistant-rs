@@ -1,5 +1,5 @@
 import { AnchorProvider, BN, Program, ProgramAccount, Wallet } from '@project-serum/anchor';
-// import { bs58 } from 'bs58';
+import { Account as TokenAccount } from '@solana/spl-token';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 
 import {
@@ -10,7 +10,7 @@ import {
 import {
     AsyncSigner,
     buildAndSignTransaction,
-    // createAssociatedTokenAccount,
+    getParsedTokenAccountsByOwner,
     InstructionReturn,
     keypairToAsyncSigner,
     readFromRPCOrError,
@@ -360,6 +360,10 @@ export class SageGameHandler {
             GameState,
             'confirmed',
         );
+    }
+
+    async getParsedTokenAccountsByOwner(owner: PublicKey): Promise<TokenAccount[]> {
+        return await getParsedTokenAccountsByOwner(this.connection, owner);
     }
 
     async buildAndSignTransaction(instructions: InstructionReturn | InstructionReturn[]) {

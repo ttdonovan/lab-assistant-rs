@@ -15,9 +15,10 @@ See [README.md](labs-cmd-center/README.md) for more details.
 ```
 - [x] a fleet can start/stop mining
 - [x] a fleet can dock/undock from Starbase
-- [ ] a fleet can unload/reload Cargo supplies
-- [ ] a fleet can move to sector corrdinates
-- [ ] a fleet can survery sector scan for SDU
+- [x] a fleet can withdraw/unload cargo (deposit to Starbase)
+- [x] a fleet can deposit/reload cargo supplies (withdraw from Starbase)
+- [ ] a fleet can move to sector coordinates
+- [ ] a fleet can survey sector scan for SDU
 ```
 
 ### Example of Usage
