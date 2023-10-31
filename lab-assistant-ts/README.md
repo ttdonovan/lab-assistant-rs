@@ -28,6 +28,10 @@ See `labs-cmd-center/tests` folder for more detailed examples.
 * `solana.test.rs`
 * `solana.tx.test.rs`
 
+See `labs-cmd-center/examples` folder for simple instructions.
+
+* Mine Asteroids - `mining.ts`
+
 ### Developer Notes
 
 #### Bun
