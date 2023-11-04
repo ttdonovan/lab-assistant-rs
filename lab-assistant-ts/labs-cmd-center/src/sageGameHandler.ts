@@ -372,6 +372,7 @@ export class SageGameHandler {
 
     async sendTransaction(tx: TransactionReturn) {
         // TODO: handle errors
+        // https://build.staratlas.com/dev-resources/apis-and-data/data-source
         //
         // Convert the error code from Hex to decimal so 0xbc4 becomes 3012.
         // Any error code <6000 is an anchor error and can use anchor.so/errors

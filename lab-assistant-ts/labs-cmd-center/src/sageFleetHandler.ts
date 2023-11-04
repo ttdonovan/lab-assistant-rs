@@ -17,6 +17,7 @@ import {
     StopMiningAsteroidInput,
     DepositCargoToFleetInput,
     WithdrawCargoFromFleetInput,
+    WarpToCoordinateInput,
 } from '@staratlas/sage';
 
 import { SageGameHandler } from './sageGameHandler';
@@ -553,6 +554,73 @@ export class SageFleetHandler {
             gameId,
             gameState,
             input,
+        );
+
+        ixs.push(ix_1);
+
+        return ixs;
+    }
+
+    async ixWarpToCoordinate(fleetPubkey: PublicKey, coordinates: [BN, BN]): Promise<InstructionReturn[]> {
+        const fleetAccount = await this.getFleetAccount(fleetPubkey);
+
+        // TODO: ensure fleet state is "Idle" - is there a better way to do this?
+        if (!fleetAccount.state.Idle && !this._gameHandler.game) {
+            throw 'fleet is not idle (or game is not loaded)';
+        }
+
+        const ixs: InstructionReturn[] = [];
+
+        const _ = this._gameHandler.getSectorAddress(coordinates);
+
+        const gameFuelMint = this._gameHandler.game?.data.mints.fuel as PublicKey;
+
+        const program = this._gameHandler.program;
+        const key = this._gameHandler.funder;
+        const playerProfile = fleetAccount.data.ownerProfile;
+        const profileFaction = this._gameHandler.getProfileFactionAddress(playerProfile);
+        const fleetKey = fleetPubkey;
+        const fleetFuelTank = fleetAccount.data.fuelTank;
+        const fuelCargoType = this._gameHandler.getCargoTypeAddress(gameFuelMint);
+        const cargoStatsDefinition = this._gameHandler.cargoStatsDefinition as PublicKey;
+        const tokenMint = gameFuelMint;
+        const tokenFrom = await getAssociatedTokenAddress(tokenMint, fleetFuelTank, true);
+        const gameState = this._gameHandler.gameState as PublicKey;
+        const gameId = this._gameHandler.gameId as PublicKey;
+        const cargoProgram = this._gameHandler.cargoProgram;
+        const input = {
+            keyIndex: 0, // FIXME: This is the index of the wallet used to sign the transaction in the permissions list of the player profile being used.
+            toSector: coordinates,
+        } as WarpToCoordinateInput;
+
+        const ix_1 = Fleet.warpToCoordinate(
+            program,
+            key,
+            playerProfile,
+            profileFaction,
+            fleetKey,
+            fleetFuelTank,
+            fuelCargoType,
+            cargoStatsDefinition,
+            tokenFrom,
+            tokenMint,
+            gameState,
+            gameId,
+            cargoProgram,
+            input,
+        )
+
+        ixs.push(ix_1);
+
+        return ixs;
+    }
+
+    async ixReadyToExitWarp(fleetPubkey: PublicKey): Promise<InstructionReturn[]> {
+        const ixs: InstructionReturn[] = [];
+
+        const ix_1 = Fleet.moveWarpHandler(
+            this._gameHandler.program,
+            fleetPubkey,
         );
 
         ixs.push(ix_1);

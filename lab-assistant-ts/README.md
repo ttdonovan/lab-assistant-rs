@@ -17,7 +17,11 @@ See [README.md](labs-cmd-center/README.md) for more details.
 - [x] a fleet can dock/undock from Starbase
 - [x] a fleet can withdraw/unload cargo (deposit to Starbase)
 - [x] a fleet can deposit/reload cargo supplies (withdraw from Starbase)
-- [ ] a fleet can move to sector coordinates
+- [/] a fleet can move to sector coordinates (warp)
+    - [ ] movement handler (?)
+    - [x] warp cordinate
+    - [ ] warp lane (?)
+- [ ] a fleet can move to sector coordinates (subwarp)
 - [ ] a fleet can survey sector scan for SDU
 ```
 
@@ -31,6 +35,7 @@ See `labs-cmd-center/tests` folder for more detailed examples.
 See `labs-cmd-center/examples` folder for simple instructions.
 
 * Mine Asteroids - `mining.ts`
+* Move to Coordinates - `movement.ts`
 
 ### Developer Notes
 

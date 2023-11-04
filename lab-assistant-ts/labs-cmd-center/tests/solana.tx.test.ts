@@ -29,7 +29,7 @@ const sendSageGameTx = async (gameHander: SageGameHandler, tx: any) => {
         console.log('--- [rx (send): start] ---');
     }
 
-    // const hexString = '0x177b';
+    // const hexString = '0x17b4';
     // const decimal = parseInt(hexString, 16);
     // console.log('Error:', decimal);
 }
@@ -148,4 +148,24 @@ describe('SAGE Labs (tx)', () => {
             }
         });
     });
+
+    describe.skip('Fleet Handler - Movement/Warp Actions', () => {
+        beforeAll(async () => {
+            const cargoFleetName = 'MOVE#1';
+            fleetPubkey = sageGameHandler.getFleetAddress(playerProfilePubkey, cargoFleetName);
+            fleetAccount = await sageFleetHandler.getFleetAccount(fleetPubkey);
+        });
+
+        test.skip('Warp to Coordinate', async () => {
+            const sector = fleetAccount.state.Idle?.sector as [BN, BN];
+            const coordinates: [BN, BN] = [sector[0].add(new BN(1)), sector[1].add(new BN(1))];
+
+            expect(`X: ${sector[0]} | Y: ${sector[1]}`).toBe(`X: 40 | Y: 30`);
+            expect(`X: ${coordinates[0]} | Y: ${coordinates[1]}`).toBe(`X: 41 | Y: 31`);
+
+            let ix = await sageFleetHandler.ixWarpToCoordinate(fleetPubkey, coordinates);
+            let tx = await sageGameHandler.buildAndSignTransaction(ix);
+            await sendSageGameTx(sageGameHandler, tx);
+        });
+    })
 })
