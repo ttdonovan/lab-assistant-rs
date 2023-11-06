@@ -54,13 +54,15 @@ const findGame = async (provider: AnchorProvider) => {
 const findAllPlanets = async (provider: AnchorProvider) => {
     const program = await sageProgram(provider);
     const planets = await program.account.planet.all([
-        // TODO: why is this not working?
+        // TODO: why is this not working? 
+        // filters: [
         // {
         //     memcmp: {
         //         offset: 1,
         //         bytes: bs58.encode(Buffer.from('UST-1-3)),
         //     },
         // },
+        // ]
     ]);
 
     return planets;
