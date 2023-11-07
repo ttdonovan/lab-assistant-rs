@@ -1,6 +1,7 @@
 import { AnchorProvider, BN, Program, ProgramAccount, Wallet } from '@project-serum/anchor';
 import { Account as TokenAccount } from '@solana/spl-token';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 import {
     CARGO_IDL,
@@ -54,11 +55,10 @@ const findGame = async (provider: AnchorProvider) => {
 const findAllPlanets = async (provider: AnchorProvider) => {
     const program = await sageProgram(provider);
     const planets = await program.account.planet.all([
-        // TODO: why is this not working?
         // {
         //     memcmp: {
-        //         offset: 1,
-        //         bytes: bs58.encode(Buffer.from('UST-1-3)),
+        //         offset: 9,
+        //         bytes: bs58.encode(Buffer.from('UST-1-3')),
         //     },
         // },
     ]);
@@ -180,6 +180,21 @@ export class SageGameHandler {
 
             return Promise.resolve("ready");
         });
+    }
+
+    async getPlanetAccount(planetName: string) {
+        const program = await sageProgram(this.provider);
+
+        const [planet] = await program.account.planet.all([
+           {
+                memcmp: {
+                    offset: 9,
+                    bytes: bs58.encode(Buffer.from(planetName)),
+                },
+            },
+        ]);
+
+        return planet;
     }
 
     async getPlayerProfileAddress(playerPubkey: PublicKey) {
