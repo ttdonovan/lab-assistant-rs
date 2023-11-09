@@ -12,9 +12,7 @@ If you find our tools useful, please consider donating to support continued and 
 
 ## lab-assistant-ts - (Active Development)
 
-Our goal is to create a simpler interface/sdk for issuing commands to Sage Labs using TypeScript bindings.
-
-For more details, see [lab-assistant-ts/README.md](lab-assistant-ts/README.md).
+Moved to [lab-assistant-ts](https://github.com/ttdonovan/lab-assistant-ts).
 
 ## lab-assistant-rs - (Development on Hold)
 
