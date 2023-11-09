@@ -36,7 +36,6 @@ import {
     Game,
     GameState,
     MineItem,
-    Planet,
     PlanetType,
     Resource,
     SagePlayerProfile,
@@ -346,6 +345,24 @@ export class SageGameHandler {
         );
 
         return profileFaction;
+    }
+
+    async loadPlayerProfileFleets(playerProfile: PublicKey) {
+        if (!this.gameId) {
+            throw 'this.gameId not set';
+        }
+
+        const program = await sageProgram(this.provider);
+        const fleets = await program.account.fleet.all([
+            {
+                memcmp: {
+                    offset: 41,
+                    bytes: playerProfile.toBase58(),
+                }
+            }
+        ]);
+
+        return fleets;
     }
 
     async loadGame() {

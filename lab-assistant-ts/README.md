@@ -27,6 +27,8 @@ See [README.md](labs-cmd-center/README.md) for more details.
 
 ### Example of Usage
 
+#### Tests
+
 See `labs-cmd-center/tests` folder for more detailed examples.
 
 * `solana.test.rs`
@@ -36,6 +38,18 @@ See `labs-cmd-center/examples` folder for simple instructions.
 
 * Mine Asteroids - `mining.ts`
 * Move to Coordinates - `movement.ts`
+
+#### Server
+
+First configure the `labs-cmd-center/.env` file.
+
+```
+cd labs-cmd-center
+cp .env.sample .env
+bun run src/server.ts
+```
+
+See [thunder-collection_labs-cmd-center-api.json](docs/thunder-collection_labs-cmd-center-api.json) for more details.
 
 ### Developer Notes
 

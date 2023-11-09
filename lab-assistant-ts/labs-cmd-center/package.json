@@ -2,6 +2,10 @@
   "name": "labs-cmd-center",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "start": "bun run server.ts",
+    "watch": "bun --watch server.ts"
+  },
   "devDependencies": {
     "bun-types": "latest"
   },

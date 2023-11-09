@@ -365,7 +365,7 @@ export class SageFleetHandler {
         return ixs;
     }
 
-    async ixDepositCargoToFleet(fleetPubkey: PublicKey, tokenMint: PublicKey, amount: BN): Promise<InstructionReturn[]> {
+    async ixDepositCargoToFleet(fleetPubkey: PublicKey, cargoPodToKey: PublicKey, tokenMint: PublicKey, amount: BN): Promise<InstructionReturn[]> {
         const fleetAccount = await this.getFleetAccount(fleetPubkey);
 
         // TODO: ensure fleet state is "StarbaseLoadingBay" - is there a better way to do this?
@@ -412,7 +412,6 @@ export class SageFleetHandler {
 
         // TODO: refactor this and along with `ixWithdrawCargoFromFleet`
         const cargoPodFromKey = starbasePlayerCargoHolds.publicKey;
-        const cargoPodToKey = fleetAccount.data.cargoHold;
 
         const tokenAccounts = await this._gameHandler.getParsedTokenAccountsByOwner(cargoPodFromKey);
         const tokenAccount = tokenAccounts.find((tokenAccount) => tokenAccount.mint.toBase58() === tokenMint.toBase58());

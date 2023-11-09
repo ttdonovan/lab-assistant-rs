@@ -131,7 +131,9 @@ describe('SAGE Labs (tx)', () => {
         test.skip('Depost Cargo to Fleet', async () => {
             if (fleetAccount.state.StarbaseLoadingBay) {
                 const mintToken = sageGameHandler.mints?.food as PublicKey;
-                let ix = await sageFleetHandler.ixDepositCargoToFleet(fleetPubkey, mintToken, new BN(100));
+                const cargoPodToKey = fleetAccount.data.cargoHold;
+
+                let ix = await sageFleetHandler.ixDepositCargoToFleet(fleetPubkey, cargoPodToKey, mintToken, new BN(100));
                 let tx = await sageGameHandler.buildAndSignTransaction(ix);
                 await sendSageGameTx(sageGameHandler, tx);
             }
